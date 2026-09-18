@@ -12,6 +12,7 @@ import { onDomChange } from "../watch";
 import { openFullscreen } from "./fullscreen";
 import { useCurrentTrack, useLyrics } from "./hooks";
 import { LyricsView } from "./LyricsView";
+import { pipSupported, togglePip } from "./pip";
 
 function LyricsCard() {
   const track = useCurrentTrack();
@@ -24,9 +25,16 @@ function LyricsCard() {
         <button className="ghost-lyrics-card__title" onClick={() => history().push("/lyrics")}>
           Lyrics
         </button>
-        <button className="ghost-round-button ghost-lyrics-card__expand" onClick={openFullscreen} title="Fullscreen" aria-label="Fullscreen">
-          <Icon name="expand" />
-        </button>
+        <div className="ghost-lyrics-card__actions">
+          {pipSupported() && (
+            <button className="ghost-round-button ghost-lyrics-card__action" onClick={togglePip} title="Picture-in-picture" aria-label="Picture-in-picture">
+              <Icon name="pip" />
+            </button>
+          )}
+          <button className="ghost-round-button ghost-lyrics-card__action" onClick={openFullscreen} title="Fullscreen" aria-label="Fullscreen">
+            <Icon name="expand" />
+          </button>
+        </div>
       </header>
       <LyricsView key={track?.uri} lyrics={state.lyrics} variant="card" />
     </section>

@@ -1,0 +1,114 @@
+/* --- Picture-in-picture lyrics (src/lyrics/pip.tsx, PipView.tsx) -----------
+   A separate document: it gets copies of the page's stylesheets and a mirror of
+   <html>'s classes/variables, so everything below can use the same tokens. */
+
+.ghost-pip {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--spice-text);
+  background: var(--ghost-bg-color, var(--spice-main));
+  isolation: isolate;
+}
+
+/* The main window's already-baked background image; live-filtered only for
+   custom images that couldn't be baked. */
+.ghost-pip__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: center / cover no-repeat;
+}
+
+.ghost-pip__bg--live {
+  inset: calc(var(--ghost-blur) * -2);
+  filter: blur(var(--ghost-blur)) brightness(var(--ghost-brightness)) saturate(var(--ghost-saturation))
+    contrast(var(--ghost-contrast));
+}
+
+.ghost-pip__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 4px;
+  min-width: 0;
+}
+
+.ghost-pip__cover {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.ghost-pip__meta {
+  min-width: 0;
+}
+
+.ghost-pip__title,
+.ghost-pip__artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ghost-pip__title {
+  font-weight: 700;
+}
+
+.ghost-pip__artist {
+  font-size: 0.85rem;
+  color: var(--spice-subtext);
+}
+
+.ghost-pip__lyrics {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ghost-lyrics--pip {
+  padding: 40% 16px 60%;
+}
+
+.ghost-lyrics--pip .ghost-lyrics__line {
+  font-size: calc(var(--ghost-lyrics-size) * 0.6);
+}
+
+.ghost-lyrics--pip .ghost-lyrics__line[data-state="active"] {
+  transform: none;
+}
+
+.ghost-lyrics--pip .ghost-lyrics__credit {
+  display: none;
+}
+
+/* Controls fade in while the pointer is over the window. */
+.ghost-pip__controls {
+  padding: 4px 14px 12px;
+  transition: opacity 0.2s;
+}
+
+.ghost-pip:not(:hover) .ghost-pip__controls {
+  opacity: 0;
+}
+
+.ghost-pip__buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ghost-pip__play {
+  background: var(--spice-text);
+  color: var(--spice-main);
+}
+
+.ghost-pip__play:hover {
+  background: var(--spice-button);
+}

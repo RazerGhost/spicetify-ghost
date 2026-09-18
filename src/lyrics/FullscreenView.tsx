@@ -16,19 +16,21 @@ function formatTime(ms: number) {
 }
 
 // Updated per frame straight on the DOM (no React re-renders), and only when
-// something visibly changed — nothing is written while paused.
-function Progress() {
+// something visibly changed — nothing is written while paused. Uses the rAF of
+// the window it's rendered in (also used by the picture-in-picture view).
+export function Progress() {
   const fill = useRef<HTMLDivElement>(null);
   const elapsed = useRef<HTMLSpanElement>(null);
   const total = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    const win = fill.current?.ownerDocument.defaultView ?? window;
     let frame = 0;
     let lastPosition = -1;
     let lastElapsed = "";
     let lastTotal = "";
     const tick = () => {
-      frame = requestAnimationFrame(tick);
+      frame = win.requestAnimationFrame(tick);
       const position = Spicetify.Player.getProgress();
       if (position === lastPosition) return;
       lastPosition = position;
@@ -40,7 +42,7 @@ function Progress() {
       if (t !== lastTotal && total.current) total.current.textContent = lastTotal = t;
     };
     tick();
-    return () => cancelAnimationFrame(frame);
+    return () => win.cancelAnimationFrame(frame);
   }, []);
 
   const onSeek = (e: { currentTarget: HTMLDivElement; clientX: number }) => {

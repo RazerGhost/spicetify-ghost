@@ -31,7 +31,12 @@
   text-decoration: underline;
 }
 
-.ghost-lyrics-card__expand {
+.ghost-lyrics-card__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.ghost-lyrics-card__action {
   width: 28px;
   height: 28px;
 }

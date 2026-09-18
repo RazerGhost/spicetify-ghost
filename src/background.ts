@@ -124,6 +124,24 @@ async function bake(img: HTMLImageElement, s: Settings): Promise<string | null> 
   }
 }
 
+// The image currently shown, for other windows (picture-in-picture) to reuse
+// instead of baking their own. live = un-baked, needs the CSS filter.
+export type BackgroundImage = { url: string; live: boolean } | null;
+let shown: BackgroundImage = null;
+const backgroundListeners = new Set<(image: BackgroundImage) => void>();
+
+export const currentBackground = () => shown;
+
+export function onBackgroundChange(listener: (image: BackgroundImage) => void) {
+  backgroundListeners.add(listener);
+  return () => void backgroundListeners.delete(listener);
+}
+
+function announce(image: BackgroundImage) {
+  shown = image;
+  backgroundListeners.forEach((l) => l(image));
+}
+
 function paint(layer: HTMLElement, url: string, live: boolean) {
   const old = layerUrls.get(layer);
   layer.style.setProperty("--ghost-art", `url("${url}")`);
@@ -141,6 +159,7 @@ async function updateImage() {
   if (!src) {
     shownImage = null;
     layers.forEach((l) => l.classList.remove("ghost-active"));
+    announce(null);
     return;
   }
   let img: HTMLImageElement;
@@ -165,6 +184,7 @@ async function updateImage() {
   next.classList.add("ghost-active");
   layers[active].classList.remove("ghost-active");
   active = 1 - active;
+  announce({ url: baked ?? src, live: !baked });
 }
 
 /** Re-bake the current image in place (blur/colour sliders, window size). */
@@ -172,7 +192,10 @@ async function rebake() {
   const img = shownImage;
   if (!img) return;
   const baked = await bake(img, getSettings());
-  if (baked && img === shownImage) paint(layers[active], baked, false);
+  if (baked && img === shownImage) {
+    paint(layers[active], baked, false);
+    announce({ url: baked, live: false });
+  }
 }
 
 // --- accent colour -------------------------------------------------------------

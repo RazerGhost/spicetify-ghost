@@ -19,10 +19,10 @@ const LOOKAHEAD = 0.05;
 /** Pause auto-scroll this long after the user scrolls. */
 const USER_SCROLL_PAUSE = 4000;
 
-export type LyricsVariant = "page" | "card" | "fullscreen";
+export type LyricsVariant = "page" | "card" | "fullscreen" | "pip";
 
 /** Where the current line sits, as a fraction of the scroller's height. */
-const ANCHOR: Record<LyricsVariant, number> = { page: 0.35, card: 0.4, fullscreen: 0.4 };
+const ANCHOR: Record<LyricsVariant, number> = { page: 0.35, card: 0.4, fullscreen: 0.4, pip: 0.4 };
 
 function buildItems(lyrics: Lyrics): Item[] {
   const items: Item[] = [];
@@ -62,6 +62,10 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
   useEffect(() => {
     const root = scroller.current;
     if (!root || !synced) return;
+    // The window this view lives in — the picture-in-picture window for the PiP
+    // view. Its rAF keeps running when Spotify's main window is minimised (the
+    // main window's doesn't), and its IntersectionObserver sees its own viewport.
+    const win = (root.ownerDocument.defaultView ?? window) as Window & typeof globalThis;
 
     const elements = Array.from(root.querySelectorAll<HTMLElement>("[data-item]"));
     const states: string[] = elements.map(() => "");
@@ -84,9 +88,9 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
 
     // Stop the loop entirely while the view is off-screen or hidden (card
     // scrolled away, everything under fullscreen), restart when it's back.
-    const io = new IntersectionObserver(([entry]) => {
+    const io = new win.IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
-      if (visible && !frame) frame = requestAnimationFrame(tick);
+      if (visible && !frame) frame = win.requestAnimationFrame(tick);
     });
     io.observe(root);
 
@@ -100,7 +104,7 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
     const scrollTo = (el: HTMLElement, smooth: boolean) => {
       programmatic = true;
       root.scrollTo({ top: el.offsetTop - root.clientHeight * ANCHOR[variant], behavior: smooth ? "smooth" : "auto" });
-      setTimeout(() => (programmatic = false), 600);
+      win.setTimeout(() => (programmatic = false), 600);
     };
 
     function tick() {
@@ -108,7 +112,7 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
         frame = 0;
         return;
       }
-      frame = requestAnimationFrame(tick);
+      frame = win.requestAnimationFrame(tick);
       const t = Spicetify.Player.getProgress() / 1000 + LOOKAHEAD;
       if (t === lastTime) return; // paused: nothing moves
       lastTime = t;
@@ -152,7 +156,7 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
 
     return () => {
       io.disconnect();
-      cancelAnimationFrame(frame);
+      win.cancelAnimationFrame(frame);
       root.removeEventListener("wheel", onUserScroll);
       root.removeEventListener("touchmove", onUserScroll);
       root.removeEventListener("keydown", onUserScroll);

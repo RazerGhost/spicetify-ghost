@@ -217,9 +217,32 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
   transform: scale(0.94);
 }
 
-.ghost-lyrics-page__fullscreen {
+.ghost-lyrics-page__actions {
   position: absolute;
   top: 16px;
   right: 16px;
   z-index: 1;
+  display: flex;
+  gap: 8px;
+}
+
+/* The lyrics page centres its lyrics (fullscreen/card/PiP stay left-aligned).
+   With everything centred, duet lines can't sit on the "other side", so the
+   second singer is set apart by weight instead. */
+.ghost-lyrics--page .ghost-lyrics__line {
+  text-align: center;
+  transform-origin: center;
+}
+
+.ghost-lyrics--page .ghost-lyrics__line--opposite {
+  font-weight: 600;
+  font-style: italic;
+}
+
+.ghost-lyrics--page .ghost-lyrics__interlude {
+  justify-content: center;
+}
+
+.ghost-lyrics--page .ghost-lyrics__credit {
+  text-align: center;
 }
