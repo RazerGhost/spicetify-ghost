@@ -19,6 +19,11 @@ const LOOKAHEAD = 0.05;
 /** Pause auto-scroll this long after the user scrolls. */
 const USER_SCROLL_PAUSE = 4000;
 
+export type LyricsVariant = "page" | "card" | "fullscreen";
+
+/** Where the current line sits, as a fraction of the scroller's height. */
+const ANCHOR: Record<LyricsVariant, number> = { page: 0.35, card: 0.4, fullscreen: 0.4 };
+
 function buildItems(lyrics: Lyrics): Item[] {
   const items: Item[] = [];
   let previousEnd = 0;
@@ -49,7 +54,7 @@ function seek(seconds: number) {
   Spicetify.Player.seek(Math.max(0, Math.round(seconds * 1000)));
 }
 
-export function LyricsView({ lyrics }: { lyrics: Lyrics }) {
+export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; variant?: LyricsVariant }) {
   const scroller = useRef<HTMLDivElement>(null);
   const items = useMemo(() => buildItems(lyrics), [lyrics]);
   const synced = lyrics.kind !== "static";
@@ -75,7 +80,7 @@ export function LyricsView({ lyrics }: { lyrics: Lyrics }) {
 
     const scrollTo = (el: HTMLElement, smooth: boolean) => {
       programmatic = true;
-      root.scrollTo({ top: el.offsetTop - root.clientHeight * 0.35, behavior: smooth ? "smooth" : "auto" });
+      root.scrollTo({ top: el.offsetTop - root.clientHeight * ANCHOR[variant], behavior: smooth ? "smooth" : "auto" });
       setTimeout(() => (programmatic = false), 600);
     };
 
@@ -127,10 +132,10 @@ export function LyricsView({ lyrics }: { lyrics: Lyrics }) {
       root.removeEventListener("touchmove", onUserScroll);
       root.removeEventListener("keydown", onUserScroll);
     };
-  }, [items, synced]);
+  }, [items, synced, variant]);
 
   return (
-    <div ref={scroller} className={`ghost-lyrics ghost-lyrics--${lyrics.kind}`} tabIndex={0}>
+    <div ref={scroller} className={`ghost-lyrics ghost-lyrics--${lyrics.kind} ghost-lyrics--${variant}`} tabIndex={0}>
       {items.map((item, i) =>
         item.type === "interlude" ? (
           <div key={i} data-item className="ghost-lyrics__interlude" aria-hidden="true">

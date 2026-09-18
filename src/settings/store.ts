@@ -36,6 +36,8 @@ export type Settings = {
   lyricsPage: boolean;
   lyricsSize: number; // px
   lyricsBlur: boolean;
+  lyricsCard: boolean;
+  fullscreenButton: boolean;
   // Top bar & library
   navGlass: boolean;
   navAutoHide: boolean;
@@ -74,6 +76,8 @@ export const DEFAULTS: Settings = {
   lyricsPage: true,
   lyricsSize: 36,
   lyricsBlur: true,
+  lyricsCard: true,
+  fullscreenButton: true,
   navGlass: true,
   navAutoHide: false,
   slimRail: true,

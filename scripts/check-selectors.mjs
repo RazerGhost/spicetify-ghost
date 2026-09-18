@@ -58,8 +58,10 @@ for (const [, raw] of css.matchAll(/([^{};]+)\{/g)) {
     add(v, "attr", "user.css");
 }
 
-// Custom properties we *set* that belong to Spotify.
-for (const [, prop] of css.matchAll(/(--[\w-]+)\s*:/g)) add(prop, "var", "user.css");
+// Custom properties we *set* that belong to Spotify — only inside declaration
+// blocks, so selectors like `.ghost-fs--idle :is(…)` aren't mistaken for one.
+for (const [, block] of css.matchAll(/\{([^{}]*)\}/g))
+  for (const [, prop] of block.matchAll(/(?:^|;)\s*(--[\w-]+)\s*:/g)) add(prop, "var", "user.css");
 
 // className="…" in TSX, and classes in querySelector(All)("…") selectors in TS/TSX.
 for (const file of walk(SRC, /\.tsx?$/)) {

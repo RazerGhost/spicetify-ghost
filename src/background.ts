@@ -30,7 +30,7 @@ function largest(images: { url: string; label: string }[] | undefined): string |
 
 // Metadata image fields first; some items (e.g. music videos) may only carry
 // item.images / item.album.images, so fall back to those.
-function albumArt(): string | undefined {
+export function albumArt(): string | undefined {
   const item = Spicetify.Player.data?.item;
   const meta = item?.metadata;
   return toHttps(

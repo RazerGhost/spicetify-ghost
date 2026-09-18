@@ -797,6 +797,242 @@ html.ghost-lyrics-open .Root__main-view .main-view-container {
   opacity: 0.7;
 }
 
+/* offsetTop in LyricsView is measured from the scroller. */
+.ghost-lyrics {
+  position: relative;
+}
+
+/* Shared round glass button (lyrics page, card, fullscreen). */
+.ghost-round-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(var(--spice-rgb-text), 0.08);
+  color: var(--spice-text);
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s, opacity 0.3s;
+}
+
+.ghost-round-button:hover {
+  background: color-mix(in oklab, var(--spice-button) 30%, transparent);
+}
+
+.ghost-round-button:active {
+  transform: scale(0.94);
+}
+
+.ghost-lyrics-page {
+  position: relative;
+}
+
+.ghost-lyrics-page__fullscreen {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+}
+
+/* --- Fullscreen (src/lyrics/FullscreenView.tsx) ---------------------------
+   .Root is hidden, so #ghost-bg (the album-art background) is what's behind. */
+
+html.ghost-fullscreen .Root {
+  visibility: hidden;
+}
+
+#ghost-fs-host {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.ghost-fs {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(280px, 36%) 1fr;
+  align-items: center;
+  gap: 6vw;
+  padding: 6vh 6vw;
+  color: var(--spice-text);
+}
+
+.ghost-fs--no-lyrics {
+  grid-template-columns: minmax(280px, 460px);
+  justify-content: center;
+}
+
+.ghost-fs--idle {
+  cursor: none;
+}
+
+.ghost-fs__close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+.ghost-fs--idle :is(.ghost-fs__close, .ghost-fs__controls, .ghost-fs__progress) {
+  opacity: 0;
+}
+
+.ghost-fs__now {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.ghost-fs__cover {
+  width: 100%;
+  max-width: 46vh;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.ghost-fs__title {
+  font-size: clamp(1.5rem, 2.6vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.ghost-fs__artist {
+  margin-top: 4px;
+  font-size: 1.15rem;
+  color: var(--spice-subtext);
+}
+
+.ghost-fs__progress {
+  transition: opacity 0.3s;
+}
+
+/* 16px tall click target; the 4px track is drawn as a centred background. */
+.ghost-fs__bar {
+  height: 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background: linear-gradient(rgba(var(--spice-rgb-text), 0.2), rgba(var(--spice-rgb-text), 0.2)) center / 100% 4px no-repeat;
+}
+
+.ghost-fs__fill {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--spice-text);
+}
+
+.ghost-fs__bar:hover .ghost-fs__fill {
+  background: var(--spice-button);
+}
+
+.ghost-fs__times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--spice-subtext);
+}
+
+.ghost-fs__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  transition: opacity 0.3s;
+}
+
+.ghost-fs__controls .ghost-round-button {
+  width: 48px;
+  height: 48px;
+}
+
+.ghost-fs__controls .ghost-fs__play {
+  width: 64px;
+  height: 64px;
+  background: var(--spice-text);
+  color: var(--spice-main);
+}
+
+.ghost-fs__controls .ghost-fs__play:hover {
+  background: var(--spice-button);
+}
+
+.ghost-fs__lyrics {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ghost-lyrics--fullscreen {
+  padding: 40vh 0 50vh;
+}
+
+.ghost-lyrics--fullscreen .ghost-lyrics__line {
+  font-size: calc(var(--ghost-lyrics-size) * 1.2);
+}
+
+/* --- Lyrics card in the now-playing view (src/lyrics/npvCard.tsx) --------- */
+
+.ghost-lyrics-card {
+  margin-top: 16px;
+  padding: 12px 16px 0;
+  border-radius: var(--ghost-radius);
+  background: rgba(var(--spice-rgb-text), 0.05);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+}
+
+.ghost-lyrics-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ghost-lyrics-card__title {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--spice-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ghost-lyrics-card__title:hover {
+  text-decoration: underline;
+}
+
+.ghost-lyrics-card__expand {
+  width: 28px;
+  height: 28px;
+}
+
+.ghost-lyrics--card {
+  height: 240px;
+  padding: 90px 0 140px;
+  mask-image: linear-gradient(transparent, #000 20%, #000 75%, transparent);
+}
+
+.ghost-lyrics--card .ghost-lyrics__line {
+  font-size: 1.2rem;
+  margin-bottom: 0.5em;
+}
+
+.ghost-lyrics--card .ghost-lyrics__line[data-state="active"] {
+  transform: none;
+}
+
+.ghost-lyrics--card .ghost-lyrics__credit {
+  display: none;
+}
+
 /* --- Spicetify Marketplace ------------------------------------------------
    Its stylesheet (spicetify-routes-marketplace.css) uses readable marketplace-*
    classes and --spice-* colours, so these hooks are stable. Solid surfaces become
