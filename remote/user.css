@@ -1,3 +1,4 @@
 /* Intentionally empty: Spicetify requires a user.css, but in the remote install
-   the stylesheet is loaded by theme.js with a version query (see remote/theme.js),
-   so updates aren't held back by the 7-day browser cache. */
+   the stylesheet is loaded by theme.js, pinned to the latest dist commit (see
+   remote/theme.js), so updates arrive on the next start instead of being held
+   back by jsDelivr's and the browser's caches. */
