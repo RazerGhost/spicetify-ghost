@@ -1,0 +1,162 @@
+// Synced lyrics renderer.
+//
+// React renders the structure once per song; everything that changes per frame
+// (which line is active, word fill, interlude dots, blur distance, scrolling) is
+// written straight to the DOM from a requestAnimationFrame loop. That keeps it
+// smooth without re-rendering React 60 times a second.
+
+import { useEffect, useMemo, useRef } from "react";
+import type { Line, Lyrics, Vocal } from "./types";
+
+type Item =
+  | { type: "line"; start: number; end: number; line: Line }
+  | { type: "interlude"; start: number; end: number };
+
+/** Gaps at least this long (seconds) get interlude dots. */
+const INTERLUDE_MIN = 4;
+/** Small lookahead so highlights don't feel late. */
+const LOOKAHEAD = 0.05;
+/** Pause auto-scroll this long after the user scrolls. */
+const USER_SCROLL_PAUSE = 4000;
+
+function buildItems(lyrics: Lyrics): Item[] {
+  const items: Item[] = [];
+  let previousEnd = 0;
+  for (const line of lyrics.lines) {
+    if (line.start - previousEnd >= INTERLUDE_MIN) {
+      items.push({ type: "interlude", start: previousEnd, end: line.start });
+    }
+    items.push({ type: "line", start: line.start, end: line.end, line });
+    previousEnd = Math.max(previousEnd, line.end);
+  }
+  return items;
+}
+
+function VocalText({ vocal, className }: { vocal: Vocal; className: string }) {
+  if (!vocal.words) return <span className={className}>{vocal.text}</span>;
+  return (
+    <span className={className}>
+      {vocal.words.map((w, i) => (
+        <span key={i} className="ghost-lyrics__word" data-start={w.start} data-end={w.end}>
+          {w.text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function seek(seconds: number) {
+  Spicetify.Player.seek(Math.max(0, Math.round(seconds * 1000)));
+}
+
+export function LyricsView({ lyrics }: { lyrics: Lyrics }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const items = useMemo(() => buildItems(lyrics), [lyrics]);
+  const synced = lyrics.kind !== "static";
+
+  useEffect(() => {
+    const root = scroller.current;
+    if (!root || !synced) return;
+
+    const elements = Array.from(root.querySelectorAll<HTMLElement>("[data-item]"));
+    const states: string[] = elements.map(() => "");
+    const wordsOf = new Map<HTMLElement, HTMLElement[]>();
+    let current = -2;
+    let userScrollAt = 0;
+    let programmatic = false;
+    let frame = 0;
+
+    const onUserScroll = () => {
+      if (!programmatic) userScrollAt = Date.now();
+    };
+    root.addEventListener("wheel", onUserScroll, { passive: true });
+    root.addEventListener("touchmove", onUserScroll, { passive: true });
+    root.addEventListener("keydown", onUserScroll);
+
+    const scrollTo = (el: HTMLElement, smooth: boolean) => {
+      programmatic = true;
+      root.scrollTo({ top: el.offsetTop - root.clientHeight * 0.35, behavior: smooth ? "smooth" : "auto" });
+      setTimeout(() => (programmatic = false), 600);
+    };
+
+    const tick = () => {
+      frame = requestAnimationFrame(tick);
+      const t = Spicetify.Player.getProgress() / 1000 + LOOKAHEAD;
+
+      // Current = last item that has started.
+      let next = -1;
+      for (let i = 0; i < items.length && items[i].start <= t; i++) next = i;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const el = elements[i];
+        const state = t < item.start ? "future" : t < item.end ? "active" : "past";
+        if (state !== states[i]) {
+          states[i] = state;
+          el.dataset.state = state;
+        }
+        if (state === "active") {
+          if (item.type === "interlude") {
+            el.style.setProperty("--ghost-p", String((t - item.start) / (item.end - item.start)));
+          } else if (item.line.words || item.line.background?.words) {
+            let words = wordsOf.get(el);
+            if (!words) wordsOf.set(el, (words = Array.from(el.querySelectorAll<HTMLElement>(".ghost-lyrics__word"))));
+            for (const w of words) {
+              const start = Number(w.dataset.start);
+              const end = Number(w.dataset.end);
+              const p = end > start ? Math.min(1, Math.max(0, (t - start) / (end - start))) : t >= start ? 1 : 0;
+              w.style.setProperty("--ghost-p", p.toFixed(3));
+            }
+          }
+        }
+      }
+
+      if (next !== current) {
+        const first = current === -2;
+        current = next;
+        elements.forEach((el, i) => el.style.setProperty("--ghost-d", String(Math.min(5, Math.abs(i - Math.max(0, next))))));
+        const target = elements[Math.max(0, next)];
+        if (target && Date.now() - userScrollAt > USER_SCROLL_PAUSE) scrollTo(target, !first);
+      }
+    };
+    tick();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      root.removeEventListener("wheel", onUserScroll);
+      root.removeEventListener("touchmove", onUserScroll);
+      root.removeEventListener("keydown", onUserScroll);
+    };
+  }, [items, synced]);
+
+  return (
+    <div ref={scroller} className={`ghost-lyrics ghost-lyrics--${lyrics.kind}`} tabIndex={0}>
+      {items.map((item, i) =>
+        item.type === "interlude" ? (
+          <div key={i} data-item className="ghost-lyrics__interlude" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+        ) : (
+          <div
+            key={i}
+            data-item
+            className={`ghost-lyrics__line${item.line.opposite ? " ghost-lyrics__line--opposite" : ""}`}
+            onClick={synced ? () => seek(item.start) : undefined}
+          >
+            <VocalText vocal={item.line} className="ghost-lyrics__main" />
+            {item.line.background && <VocalText vocal={item.line.background} className="ghost-lyrics__bg" />}
+          </div>
+        ),
+      )}
+      <div className="ghost-lyrics__credit">Lyrics: {PROVIDER_NAMES[lyrics.provider]}</div>
+    </div>
+  );
+}
+
+const PROVIDER_NAMES: Record<Lyrics["provider"], string> = {
+  amll: "AMLL TTML DB",
+  spotify: "Spotify",
+  lrclib: "LRCLIB",
+};

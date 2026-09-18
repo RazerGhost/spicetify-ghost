@@ -32,6 +32,10 @@ export type Settings = {
   playerHeight: number; // px
   showVolume: boolean;
   volumeStep: number; // % per wheel notch
+  // Lyrics
+  lyricsPage: boolean;
+  lyricsSize: number; // px
+  lyricsBlur: boolean;
   // Top bar & library
   navGlass: boolean;
   navAutoHide: boolean;
@@ -67,6 +71,9 @@ export const DEFAULTS: Settings = {
   playerHeight: 72,
   showVolume: true,
   volumeStep: 2,
+  lyricsPage: true,
+  lyricsSize: 36,
+  lyricsBlur: true,
   navGlass: true,
   navAutoHide: false,
   slimRail: true,
@@ -148,6 +155,8 @@ export function applySettings() {
     "--ghost-banner-blur": `${s.bannerBlur}px`,
     "--ghost-player-width": `${s.playerWidth}%`,
     "--ghost-player-height": `${s.playerHeight}px`,
+    "--ghost-lyrics-size": `${s.lyricsSize}px`,
+    "--ghost-lyrics-blur": s.lyricsBlur ? "0.8px" : "0px",
   };
   for (const [name, value] of Object.entries(vars)) root.style.setProperty(name, value);
 

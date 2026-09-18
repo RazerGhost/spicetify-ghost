@@ -4,7 +4,7 @@
 // Spotify's own ButtonTertiary into its wrapper — the same component and classes
 // Spicetify uses for custom-app nav links (see _renderNavLinks in spicetifyWrapper.js).
 
-import type { ReactElement } from "react";
+import { mount } from "./react";
 
 const GHOST_PATH =
   "M12 2a8 8 0 0 0-8 8v11.2c0 .6.7 1 1.2.6l1.9-1.5 1.9 1.5c.3.3.8.3 1.1 0L12 20.3l1.9 1.5c.3.3.8.3 1.1 0l1.9-1.5 1.9 1.5c.5.4 1.2 0 1.2-.6V10a8 8 0 0 0-8-8Zm-3 10a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z";
@@ -14,14 +14,6 @@ const GhostIcon = () => (
     <path d={GHOST_PATH} />
   </svg>
 );
-
-// Spicetify.ReactDOM is Spotify's react-dom; prefer createRoot, fall back to render
-// (which is what Spicetify's own PopupModal uses).
-function mount(element: ReactElement, container: HTMLElement) {
-  const ReactDOM = Spicetify.ReactDOM;
-  if (typeof ReactDOM.createRoot === "function") ReactDOM.createRoot(container).render(element);
-  else ReactDOM.render(element, container);
-}
 
 export function addTopbarButton(label: string, onClick: () => void) {
   const btn = new Spicetify.Topbar.Button(label, "", onClick) as unknown as {

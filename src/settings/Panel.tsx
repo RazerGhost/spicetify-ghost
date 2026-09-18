@@ -90,6 +90,14 @@ const SECTIONS: { title: string; controls: ControlDef[] }[] = [
     ],
   },
   {
+    title: "Lyrics",
+    controls: [
+      { kind: "toggle", key: "lyricsPage", label: "Ghost Lyrics", hint: "Replaces Spotify's lyrics page (the lyrics button in the player bar)." },
+      { kind: "slider", key: "lyricsSize", label: "Text size", min: 20, max: 64, unit: "px", when: (s) => s.lyricsPage },
+      { kind: "toggle", key: "lyricsBlur", label: "Blur distant lines", when: (s) => s.lyricsPage },
+    ],
+  },
+  {
     title: "Top bar & library",
     controls: [
       { kind: "toggle", key: "navGlass", label: "Glass top bar", hint: "Turns the top bar into one rounded glass panel." },
