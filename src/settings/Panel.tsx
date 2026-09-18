@@ -6,7 +6,7 @@ type KeysOf<T> = { [K in keyof Settings]: Settings[K] extends T ? K : never }[ke
 type When = (s: Settings) => boolean;
 
 type ControlDef = { label: string; hint?: string; when?: When } & (
-  | { kind: "slider"; key: KeysOf<number>; min: number; max: number; unit: string }
+  | { kind: "slider"; key: KeysOf<number>; min: number; max: number; unit: string; step?: number; signed?: boolean }
   | { kind: "toggle"; key: KeysOf<boolean> }
   | { kind: "choice"; key: KeysOf<string>; options: { value: string; label: string }[] }
   | { kind: "color"; key: KeysOf<string> }
@@ -95,6 +95,7 @@ const SECTIONS: { title: string; controls: ControlDef[] }[] = [
       { kind: "toggle", key: "lyricsPage", label: "Replace Spotify's lyrics page", hint: "The lyrics button in the player bar opens these synced lyrics instead of Spotify's." },
       { kind: "slider", key: "lyricsSize", label: "Text size", min: 20, max: 64, unit: "px", when: (s) => s.lyricsPage },
       { kind: "toggle", key: "lyricsBlur", label: "Blur distant lines", when: (s) => s.lyricsPage },
+      { kind: "slider", key: "lyricsOffset", label: "Lyrics timing", min: -2000, max: 2000, step: 50, unit: "ms", signed: true, hint: "+ shows lyrics earlier (when they lag behind the song), − later. Double-click to reset.", when: (s) => s.lyricsPage },
       { kind: "toggle", key: "lyricsCard", label: "Lyrics card in now-playing view", when: (s) => s.lyricsPage },
       { kind: "toggle", key: "romanize", label: "Romanize lyrics", hint: "Shows a romanized line under Korean lyrics (built in).", when: (s) => s.lyricsPage },
       { kind: "toggle", key: "romanizeJapanese", label: "… also Japanese", hint: "Romaji, including kanji. Downloads a ~17 MB dictionary once (then cached).", when: (s) => s.lyricsPage && s.romanize },
@@ -152,12 +153,14 @@ function Control({ def, s }: { def: ControlDef; s: Settings }) {
             type="range"
             min={def.min}
             max={def.max}
+            step={def.step ?? 1}
             value={s[def.key]}
             onChange={(e) => set(Number(e.currentTarget.value))}
             onDoubleClick={() => set(DEFAULTS[def.key])}
             title="Double-click to reset"
           />
           <output>
+            {def.signed && s[def.key] > 0 ? "+" : ""}
             {s[def.key]}
             {def.unit}
           </output>

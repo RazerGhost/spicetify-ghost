@@ -6,6 +6,7 @@
 // smooth without re-rendering React 60 times a second.
 
 import { useEffect, useMemo, useRef } from "react";
+import { getSettings } from "../settings/store";
 import { useRomanized } from "./romanize";
 import type { Line, Lyrics, Vocal } from "./types";
 
@@ -51,8 +52,12 @@ function VocalText({ vocal, className }: { vocal: Vocal; className: string }) {
   );
 }
 
-function seek(seconds: number) {
-  Spicetify.Player.seek(Math.max(0, Math.round(seconds * 1000)));
+/** Settings → "Lyrics timing", in seconds (+ = lyrics earlier). */
+const offset = () => getSettings().lyricsOffset / 1000;
+
+/** Jump to where `lyricsTime` is shown — i.e. undo the offset. */
+function seek(lyricsTime: number) {
+  Spicetify.Player.seek(Math.max(0, Math.round((lyricsTime - offset()) * 1000)));
 }
 
 export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; variant?: LyricsVariant }) {
@@ -117,7 +122,7 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
         return;
       }
       frame = win.requestAnimationFrame(tick);
-      const t = Spicetify.Player.getProgress() / 1000 + LOOKAHEAD;
+      const t = Spicetify.Player.getProgress() / 1000 + LOOKAHEAD + offset();
       if (t === lastTime) return; // paused: nothing moves
       lastTime = t;
 

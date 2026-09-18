@@ -36,6 +36,7 @@ export type Settings = {
   lyricsPage: boolean;
   lyricsSize: number; // px
   lyricsBlur: boolean;
+  lyricsOffset: number; // ms; + = lyrics earlier
   lyricsCard: boolean;
   replaceFullscreen: boolean;
   romanize: boolean; // Korean built in
@@ -80,6 +81,7 @@ export const DEFAULTS: Settings = {
   lyricsPage: true,
   lyricsSize: 36,
   lyricsBlur: true,
+  lyricsOffset: 0,
   lyricsCard: true,
   replaceFullscreen: true,
   romanize: true,

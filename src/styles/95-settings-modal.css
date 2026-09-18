@@ -16,7 +16,7 @@
 
 .ghost-settings__row {
   display: grid;
-  grid-template-columns: 1fr 200px 56px;
+  grid-template-columns: 1fr 200px 72px; /* fits "+2000ms" */
   align-items: center;
   gap: 16px;
   padding: 8px 0;
