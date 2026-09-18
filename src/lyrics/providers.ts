@@ -4,6 +4,7 @@
 // through Spicetify.CosmosAsync (Spotify's own auth), the others are public.
 
 import { albumArt } from "../background";
+import { platform } from "../platform";
 import { parseLRC, parseTTML, staticLyrics } from "./parse";
 import type { Line, Lyrics, TrackInfo } from "./types";
 
@@ -24,7 +25,7 @@ async function fromAmll(track: TrackInfo): Promise<Lyrics | null> {
 // route https://spclient URLs in current builds ("Resolver not found!"), so
 // that's only a fallback for older ones.
 async function requestSpotifyLyrics(track: TrackInfo): Promise<any> {
-  const builder = (Spicetify.Platform as any)?.RequestBuilder;
+  const builder = platform().RequestBuilder;
   if (builder?.build) {
     try {
       const res = await builder
@@ -101,27 +102,33 @@ const PROVIDERS: [string, (track: TrackInfo) => Promise<Lyrics | null>][] = [
 const cache = new Map<string, Promise<Lyrics | null>>();
 const CACHE_LIMIT = 50;
 
-async function resolve(track: TrackInfo): Promise<Lyrics | null> {
+/** `errored` = some provider threw (offline, server error) rather than cleanly
+ *  finding nothing — such a miss shouldn't be cached. */
+async function resolve(track: TrackInfo): Promise<{ lyrics: Lyrics | null; errored: boolean }> {
+  let errored = false;
   for (const [name, provider] of PROVIDERS) {
     try {
       const lyrics = await provider(track);
-      if (lyrics) return lyrics;
+      if (lyrics) return { lyrics, errored };
     } catch (err) {
+      errored = true;
       console.warn(`[ghost] lyrics provider "${name}" failed`, err);
     }
   }
-  return null;
+  return { lyrics: null, errored };
 }
 
-/** Lyrics for a track (cached per session); null when no provider has any. */
+/** Lyrics for a track (cached per session); null when no provider has any.
+ *  Clean misses are cached too — otherwise every remount (the now-playing card
+ *  re-renders often) re-ran the whole provider chain for songs without lyrics. */
 export function getLyrics(track: TrackInfo): Promise<Lyrics | null> {
   let pending = cache.get(track.uri);
   if (!pending) {
-    pending = resolve(track);
+    const result = resolve(track);
+    pending = result.then((r) => r.lyrics);
     cache.set(track.uri, pending);
     if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
-    // Don't cache failures caused by being offline etc. — retry next time.
-    pending.then((l) => l === null && cache.delete(track.uri));
+    result.then((r) => r.errored && !r.lyrics && cache.delete(track.uri));
   }
   return pending;
 }

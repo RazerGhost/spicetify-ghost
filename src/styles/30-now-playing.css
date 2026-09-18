@@ -1,0 +1,25 @@
+/* --- Now-playing view (right sidebar) --------------------------------------
+   Its overlays hard-code Spotify's old #121212 (rgba(18,18,18,…)) instead of a
+   theme variable, so they show up as dark blocks on the glass panel. */
+
+/* Over the canvas/cover: keep only a light top fade for the header text; drop
+   the dark band Spotify adds at the bottom. */
+html.ghost .main-nowPlayingView-canvasVisualEnhancement::before {
+  background: linear-gradient(rgba(0, 0, 0, 0.45), transparent 30%) !important;
+}
+
+html.ghost .main-nowPlayingView-canvasVisualEnhancement::after {
+  background: none !important;
+}
+
+/* With the dark band gone, a canvas (looping video) ends in a hard edge across
+   the panel. Fade the <video> itself out into the glass. Masking a container
+   instead hid the video entirely — it's positioned outside its container's box. */
+html.ghost .NowPlayingView video {
+  mask-image: linear-gradient(#000 55%, transparent 100%);
+}
+
+/* Dark block behind the track title ("Midnight"). */
+html.ghost .main-nowPlayingView-contextItemInfo::before {
+  background: none !important;
+}

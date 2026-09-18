@@ -1,0 +1,59 @@
+/* --- Lyrics card in the now-playing view (src/lyrics/npvCard.tsx) --------- */
+
+.ghost-lyrics-card {
+  /* Isolate the card: Spotify animates the now-playing panel (e.g. when the
+     canvas expands) and the card shouldn't re-layout or repaint with it. */
+  contain: layout paint;
+  margin-top: 16px;
+  padding: 12px 16px 0;
+  border-radius: var(--ghost-radius);
+  background: rgba(var(--spice-rgb-text), 0.05);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+}
+
+.ghost-lyrics-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ghost-lyrics-card__title {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--spice-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ghost-lyrics-card__title:hover {
+  text-decoration: underline;
+}
+
+.ghost-lyrics-card__expand {
+  width: 28px;
+  height: 28px;
+}
+
+.ghost-lyrics--card {
+  height: 240px;
+  padding: 90px 0 140px;
+  mask-image: linear-gradient(transparent, #000 20%, #000 75%, transparent);
+}
+
+/* No distance blur in the card: each blurred line is its own layer, and the
+   panel moves the card around while animating. Opacity carries the hierarchy. */
+.ghost-lyrics--card .ghost-lyrics__line {
+  font-size: 1.2rem;
+  margin-bottom: 0.5em;
+  filter: none;
+}
+
+.ghost-lyrics--card .ghost-lyrics__line[data-state="active"] {
+  transform: none;
+}
+
+.ghost-lyrics--card .ghost-lyrics__credit {
+  display: none;
+}

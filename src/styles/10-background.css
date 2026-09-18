@@ -1,0 +1,125 @@
+/* --- Background ----------------------------------------------------------
+   #ghost-bg is injected by theme.js as the first child of <body>. It sits
+   behind everything (z-index -1); the app's panels are made translucent so
+   the blurred art shows through. No backdrop-filter needed — the art is
+   already blurred, which keeps this cheap on the GPU. */
+
+html,
+body {
+  background: var(--spice-main) !important;
+}
+
+#ghost-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--ghost-bg-color);
+}
+
+/* The image is pre-blurred and colour-adjusted in a small canvas by
+   background.ts, so the layers carry no live filter (a full-window CSS blur was
+   re-applied on every redrawn frame — page changes, scrolling). */
+.ghost-bg__layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--ghost-fade) ease;
+  will-change: opacity;
+}
+
+/* Fallback for custom images without CORS (can't be baked): live CSS filter. */
+.ghost-bg__layer--live {
+  inset: calc(var(--ghost-blur) * -2); /* hide the blur's soft edges */
+  filter: blur(var(--ghost-blur)) brightness(var(--ghost-brightness)) saturate(var(--ghost-saturation))
+    contrast(var(--ghost-contrast));
+}
+
+/* Animated mode rotates the layer. A rotating rectangle only keeps the window
+   covered if it's at least the window's diagonal in every direction, so make it
+   a centred square of 150vmax (diagonal / longest side is at most √2 ≈ 1.42).
+   `translate` (not transform) centres it, so the rotate animation doesn't clash. */
+html.ghost-animated .ghost-bg__layer {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 150vmax;
+  height: 150vmax;
+  translate: -50% -50%;
+}
+
+/* Solid-colour mode: no image layers at all. */
+html.ghost-bg-solid .ghost-bg__layer {
+  display: none;
+}
+
+.ghost-bg__layer.ghost-active {
+  opacity: 1;
+}
+
+.ghost-bg__layer,
+.ghost-bg__layer::before,
+.ghost-bg__layer::after {
+  background: var(--ghost-art, none) center / cover no-repeat;
+}
+
+/* Animated mode: two extra rotated copies drift over the base image
+   (a CSS-only take on Lucid's WebGL shader). */
+/* The copies are the already-blurred image, so soften their circular edge with
+   a radial mask (they no longer inherit a live blur from the layer). */
+.ghost-bg__layer::before,
+.ghost-bg__layer::after {
+  content: "";
+  position: absolute;
+  width: 75%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  mask-image: radial-gradient(closest-side, #000 55%, transparent);
+  display: none;
+}
+
+.ghost-bg__layer::before {
+  top: -10%;
+  left: -10%;
+}
+
+.ghost-bg__layer::after {
+  bottom: -10%;
+  right: -10%;
+  animation-direction: reverse;
+}
+
+html.ghost-animated .ghost-bg__layer::before,
+html.ghost-animated .ghost-bg__layer::after {
+  display: block;
+  animation: ghost-spin 60s linear infinite;
+}
+
+html.ghost-animated .ghost-bg__layer.ghost-active {
+  animation: ghost-spin 120s linear infinite;
+}
+
+@keyframes ghost-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ghost-animated .ghost-bg__layer,
+  html.ghost-animated .ghost-bg__layer::before,
+  html.ghost-animated .ghost-bg__layer::after {
+    animation: none;
+  }
+}
+
+/* Film grain: a tiny SVG noise tile over the background only. */
+html.ghost-grain #ghost-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}

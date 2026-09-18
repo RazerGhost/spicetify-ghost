@@ -1,0 +1,57 @@
+/* --- Player bar ----------------------------------------------------------- */
+
+html.ghost .main-nowPlayingBar-container {
+  width: var(--ghost-player-width);
+  margin-inline: auto;
+  transition: width 0.2s ease;
+}
+
+html.ghost .main-nowPlayingBar-nowPlayingBar {
+  height: var(--ghost-player-height);
+}
+
+/* Volume percentage (volume.ts). Fixed width + tabular digits so the slider
+   doesn't jump around while the number changes. */
+.ghost-volume {
+  min-width: 4ch;
+  padding-inline-start: 8px;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: var(--spice-subtext);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.ghost-volume:hover,
+.ghost-volume:focus-visible {
+  color: var(--spice-text);
+  outline: none;
+}
+
+.ghost-volume__input {
+  width: 4.5ch;
+  padding: 0 2px;
+  border: 1px solid var(--spice-button);
+  border-radius: 4px;
+  background: rgba(var(--spice-rgb-text), 0.08);
+  color: var(--spice-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  appearance: textfield;
+}
+
+.ghost-volume__input::-webkit-inner-spin-button,
+.ghost-volume__input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* Floating: the bar becomes a glass card like the other panels. */
+html.ghost-player-floating .main-nowPlayingBar-container {
+  background-color: var(--ghost-panel);
+  border-radius: var(--ghost-radius);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  padding-inline: 8px;
+}

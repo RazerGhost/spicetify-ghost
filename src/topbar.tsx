@@ -4,16 +4,10 @@
 // Spotify's own ButtonTertiary into its wrapper — the same component and classes
 // Spicetify uses for custom-app nav links (see _renderNavLinks in spicetifyWrapper.js).
 
+import { Icon, iconMarkup } from "./icons";
 import { mount } from "./react";
 
-const GHOST_PATH =
-  "M12 2a8 8 0 0 0-8 8v11.2c0 .6.7 1 1.2.6l1.9-1.5 1.9 1.5c.3.3.8.3 1.1 0L12 20.3l1.9 1.5c.3.3.8.3 1.1 0l1.9-1.5 1.9 1.5c.5.4 1.2 0 1.2-.6V10a8 8 0 0 0-8-8Zm-3 10a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z";
-
-const GhostIcon = () => (
-  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
-    <path d={GHOST_PATH} />
-  </svg>
-);
+const GhostIcon = () => <Icon name="ghost" size={24} />;
 
 export function addTopbarButton(label: string, onClick: () => void) {
   const btn = new Spicetify.Topbar.Button(label, "", onClick) as unknown as {
@@ -24,7 +18,7 @@ export function addTopbarButton(label: string, onClick: () => void) {
   const ButtonTertiary = Spicetify.ReactComponent?.ButtonTertiary;
   if (!ButtonTertiary) {
     // Fallback: plain Spicetify button (arrow styling) with our icon.
-    btn.button.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="${GHOST_PATH}"/></svg>`;
+    btn.button.innerHTML = iconMarkup("ghost");
     return;
   }
 

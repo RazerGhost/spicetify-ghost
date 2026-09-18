@@ -1,0 +1,208 @@
+/* --- Top bar ---------------------------------------------------------------
+   Spotify: .Root__globalNav has padding = gap and margin = -gap, so it bleeds to
+   the window edges. Glass mode turns it into a regular panel instead. */
+
+html.ghost.ghost-nav-glass .Root__globalNav,
+html.ghost.ghost-nav-autohide .Root__globalNav {
+  background-color: var(--ghost-panel) !important;
+  border-radius: var(--ghost-radius);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  margin: 0 !important;
+  padding: 0 4px !important;
+  height: 52px !important;
+}
+
+/* Windows' native min/max/close buttons sit over the top-right corner. Spotify
+   reserves 135px for them with .main-globalNav-contentRightSpacer (and pulls the
+   right-hand content under them with a negative margin). In glass mode the pill
+   stops before them instead; windowControls.ts matches their height to the bar. */
+html.ghost.ghost-nav-glass .Root__globalNav {
+  margin-inline-end: calc(135px / (var(--zoom-level, 100) / 100)) !important;
+}
+
+html.ghost.ghost-nav-glass .main-globalNav-contentRightSpacer {
+  display: none;
+}
+
+html.ghost.ghost-nav-glass .main-globalNav-contentRight {
+  margin-inline-end: 0 !important;
+}
+
+/* Window buttons hidden (windowControls.ts): nothing to make room for on the
+   right, so the pill runs the full width and the reserved space goes. */
+html.ghost.ghost-no-window-buttons .Root__globalNav {
+  margin-inline-end: 0 !important;
+}
+
+html.ghost.ghost-no-window-buttons .main-globalNav-contentRightSpacer {
+  display: none;
+}
+
+/* The same switch also hides the native ⋯ menu, so drop its placeholder (and
+   the glass circle drawn on it) too. */
+html.ghost.ghost-no-window-buttons .main-globalNav-historyButtonsSpacer {
+  display: none;
+}
+
+html.ghost.ghost-no-window-buttons .main-globalNav-contentRight {
+  margin-inline-end: 0 !important;
+}
+
+/* One style for every round icon button in the bar: history arrows, home,
+   custom-app links (cart, ghost), friends, bell. The avatar (has an <img>) and
+   Spicetify's hidden placeholder button are left alone. */
+html.ghost .Root__globalNav
+  :is(
+    .main-globalNav-link-icon,
+    .main-globalNav-buddyFeed,
+    .main-globalNav-historyButtons button:not([hidden]),
+    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
+  ) {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  background-color: rgba(var(--spice-rgb-text), 0.08) !important;
+  color: var(--spice-subtext);
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+html.ghost .Root__globalNav
+  :is(
+    .main-globalNav-link-icon,
+    .main-globalNav-buddyFeed,
+    .main-globalNav-historyButtons button:not([hidden]),
+    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
+  ):not(:disabled):hover {
+  background-color: color-mix(in oklab, var(--spice-button) 30%, transparent) !important;
+  color: var(--spice-text);
+}
+
+/* On Windows the ⋯ app menu is *native*, like min/max/close — not in the DOM.
+   Spotify only reserves room for it with .main-globalNav-historyButtonsSpacer,
+   which the native button is drawn over. Paint the same round glass circle on
+   that spacer so it sits behind the native dots. (No hover: the native button
+   gets the mouse, not the page.) */
+html.ghost .main-globalNav-historyButtonsSpacer {
+  position: relative;
+}
+
+html.ghost .main-globalNav-historyButtonsSpacer::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background-color: rgba(var(--spice-rgb-text), 0.08);
+  pointer-events: none;
+}
+
+/* The buttons are now 36px, but their wrappers keep Spotify's 48px height and
+   don't centre (e.g. home next to the search field). Centre them. */
+html.ghost .main-globalNav-searchContainer,
+html.ghost .Root__globalNav :has(> .main-globalNav-link-icon) {
+  align-items: center;
+}
+
+html.ghost .Root__globalNav :has(> .main-globalNav-link-icon):not(.main-globalNav-searchContainer) {
+  display: flex;
+}
+
+/* Same icon size in every round button — Spicetify renders custom-app icons
+   (cart) at 24px, Spotify's own at 16px. */
+html.ghost .Root__globalNav
+  :is(
+    .main-globalNav-link-icon,
+    .main-globalNav-buddyFeed,
+    .main-globalNav-historyButtons button:not([hidden]),
+    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
+  )
+  svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Even spacing on the left: Spotify uses 24px between menu / arrows / custom
+   links, Spicetify sets gap:4px inline on the arrows group, and custom-app links
+   carry their own margins. One gap for all. */
+html.ghost .main-globalNav-historyButtonsWrapper,
+html.ghost .main-globalNav-historyButtonsContainer,
+html.ghost .main-globalNav-historyButtons {
+  gap: 8px !important;
+}
+
+html.ghost .main-globalNav-historyButtons {
+  padding-inline: 0 !important;
+}
+
+html.ghost .custom-navlinks-scrollable_container div[role="presentation"] > * {
+  margin-inline-end: 0 !important;
+}
+
+html.ghost .custom-navlinks-scrollable_container div[role="presentation"] {
+  gap: 8px;
+}
+
+html.ghost .Root__globalNav .main-globalNav-navLinkActive {
+  color: var(--spice-button) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--spice-button) 60%, transparent);
+}
+
+/* Search: glass field with an accent focus ring (the input itself only has a
+   hashed class, so it's reached through the readable container). */
+html.ghost .main-globalNav-searchInputContainer input {
+  background: rgba(var(--spice-rgb-text), 0.08) !important;
+}
+
+html.ghost .main-globalNav-searchInputContainer input:hover {
+  background: rgba(var(--spice-rgb-text), 0.12) !important;
+}
+
+html.ghost .main-globalNav-searchInputContainer input:focus {
+  background: rgba(var(--spice-rgb-text), 0.12) !important;
+  box-shadow: inset 0 0 0 2px var(--spice-button) !important;
+}
+
+html.ghost .main-globalNav-searchInputContainer:focus-within svg {
+  color: var(--spice-button);
+}
+
+/* Auto-hide: the bar becomes an overlay (so its grid row collapses and the main
+   view gets the space), parked above the window with a 10px invisible strip to
+   hover. The strip keeps the window draggable. */
+html.ghost-nav-autohide .Root__top-container,
+html.ghost-library-autohide .Root__top-container {
+  position: relative;
+}
+
+html.ghost-nav-autohide .Root__globalNav {
+  position: absolute !important;
+  top: 0;
+  left: var(--panel-gap);
+  right: var(--panel-gap);
+  z-index: var(--above-everything-grid-area-z-index);
+  transform: translateY(calc(-100% + 10px));
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
+  transform: translateY(var(--panel-gap));
+  opacity: 1;
+}
+
+/* --- Top bar button ----------------------------------------------------- */
+
+/* Spicetify's wrapper is a plain block <div>; the inline-flex ButtonTertiary
+   inside sits on the text baseline and drops a few px. Centre it like the cart. */
+.ghost-topbar-button {
+  display: flex;
+  align-items: center;
+}

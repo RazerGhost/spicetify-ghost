@@ -44,5 +44,3 @@ export function closeFullscreen() {
   close = null;
   fn?.();
 }
-
-export const isFullscreenOpen = () => close !== null;

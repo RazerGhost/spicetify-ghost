@@ -4,7 +4,8 @@
 //   - click the percentage to type an exact value (Enter / blur = apply, Esc = cancel)
 // Re-attaches when Spotify re-renders the player bar.
 
-import { getSettings, subscribe } from "./settings/store";
+import { platform } from "./platform";
+import { getSettings, watchSettings } from "./settings/store";
 import { onDomChange } from "./watch";
 
 const BAR = ".main-nowPlayingBar-volumeBar";
@@ -110,8 +111,8 @@ function sync() {
 }
 
 export function initVolume() {
-  (Spicetify.Platform as any)?.PlaybackAPI?._events?.addListener?.("volume", update);
-  subscribe(sync);
+  platform().PlaybackAPI?._events?.addListener("volume", update);
+  watchSettings((s) => s.showVolume, sync);
 
   // The player bar can be re-rendered (mini player, fullscreen, layout changes);
   // re-attach when the bar we're on is gone, or our label disappeared.

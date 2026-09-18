@@ -1,0 +1,182 @@
+/* --- Spicetify Marketplace ------------------------------------------------
+   Its stylesheet (spicetify-routes-marketplace.css) uses readable marketplace-*
+   classes and --spice-* colours, so these hooks are stable. Solid surfaces become
+   glass; card styling is scoped to .marketplace-grid so Spotify's own cards
+   elsewhere aren't touched. */
+
+/* Sort / filter bar and README header (solid --spice-main). It's sticky, so
+   content scrolls underneath it — blur that, or it reads through the glass.
+   (Only a small area, so the backdrop-filter is cheap.) */
+html.ghost .marketplace-header {
+  background-color: var(--ghost-sticky) !important;
+  backdrop-filter: blur(24px) saturate(1.2);
+  border-radius: var(--ghost-radius);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  /* Marketplace only pads the bottom (8px), which pushed everything up. */
+  padding: 8px 12px !important;
+}
+
+/* Header controls: one 32px height, vertically centred. Marketplace pads them
+   differently (dropdown 8px, search 10px, ⚙ button 10px/14px/6px). */
+html.ghost :is(.marketplace-header__left, .marketplace-header__right) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html.ghost .marketplace-header :is(.Dropdown-root, .marketplace-sortBox) {
+  display: flex;
+  align-items: center;
+}
+
+html.ghost .marketplace-header .Dropdown-control {
+  height: 32px;
+  padding: 0 32px 0 14px !important;
+  display: flex;
+  align-items: center;
+}
+
+html.ghost .marketplace-header .Dropdown-arrow {
+  top: 50% !important;
+  margin-top: -2px !important;
+}
+
+html.ghost .marketplace-header .searchbar-bar {
+  height: 32px;
+  padding: 0 14px !important;
+  box-sizing: border-box;
+}
+
+html.ghost .marketplace-header .marketplace-header-icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(var(--spice-rgb-text), 0.08) !important;
+}
+
+html.ghost .marketplace-header .marketplace-header-icon-button:hover {
+  background-color: color-mix(in oklab, var(--spice-button) 30%, transparent) !important;
+}
+
+/* README pages: water.css-style variables (on the Marketplace's :root) drive
+   every colour in #marketplace-readme, so re-point them at Ghost's palette and
+   turn the narrow solid box into a glass card. */
+html.ghost #marketplace-readme {
+  --background-body: transparent;
+  --background: rgba(var(--spice-rgb-text), 0.07);
+  --background-alt: rgba(var(--spice-rgb-text), 0.1);
+  --text-main: var(--spice-subtext);
+  --text-bright: var(--spice-text);
+  --text-muted: var(--spice-subtext);
+  --links: var(--spice-button);
+  --focus: var(--spice-button);
+  --border: rgba(var(--spice-rgb-text), 0.15);
+  --code: color-mix(in oklab, var(--spice-button) 55%, var(--spice-text));
+  --button-base: rgba(var(--spice-rgb-text), 0.08);
+  --button-hover: rgba(var(--spice-rgb-text), 0.14);
+  --selection: color-mix(in oklab, var(--spice-button) 40%, transparent);
+
+  max-width: 960px !important;
+  margin: 24px auto !important;
+  padding: 28px 36px !important;
+  background: rgba(var(--spice-rgb-text), 0.04) !important;
+  border-radius: calc(var(--ghost-radius) + 4px);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+}
+
+html.ghost #marketplace-readme :is(img, video) {
+  border-radius: 8px;
+}
+
+html.ghost #marketplace-readme pre {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+html.ghost #marketplace-readme :is(blockquote, q) {
+  border-left-color: var(--spice-button);
+  border-radius: 0 8px 8px 0;
+  background: rgba(var(--spice-rgb-text), 0.04);
+}
+
+/* Tabs: pills instead of 4px boxes. */
+html.ghost .marketplace-tabBar-headerItemLink {
+  border-radius: 999px !important;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+html.ghost .marketplace-tabBar-headerItemLink:hover {
+  background-color: rgba(var(--spice-rgb-text), 0.08);
+}
+
+html.ghost .marketplace-tabBar-active {
+  background-color: rgba(var(--spice-rgb-text), 0.14) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--spice-button) 50%, transparent);
+}
+
+/* Cards (Spotify's .main-card-card: solid --spice-player). */
+html.ghost .marketplace-grid .main-card-card {
+  background: rgba(var(--spice-rgb-text), 0.04) !important;
+  border-radius: var(--ghost-radius) !important;
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+html.ghost .marketplace-grid .main-card-card:is(:hover, :focus-within) {
+  background: rgba(var(--spice-rgb-text), 0.09) !important;
+  transform: translateY(-2px);
+}
+
+/* Installed: accent ring instead of a hard 1px border. */
+html.ghost .marketplace-grid .marketplace-card--installed {
+  border: 0 !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--spice-button) 70%, transparent),
+    0 0 18px color-mix(in oklab, var(--spice-button) 18%, transparent) !important;
+}
+
+html.ghost .marketplace-grid .main-cardImage-imageWrapper {
+  border-radius: calc(var(--ghost-radius) - 4px);
+  overflow: hidden;
+}
+
+html.ghost .marketplace-grid .marketplace-card__tag,
+html.ghost .marketplace-grid .marketplace-card__tags-more-btn {
+  border-radius: 999px !important;
+}
+
+/* Sort dropdown + search field (solid --spice-sidebar). The open menu stays
+   opaque-ish (elevated) for readability over the grid. */
+html.ghost .Dropdown-control,
+html.ghost .searchbar-bar {
+  background-color: rgba(var(--spice-rgb-text), 0.08) !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+}
+
+html.ghost .Dropdown-control:hover {
+  background-color: rgba(var(--spice-rgb-text), 0.14) !important;
+}
+
+html.ghost .searchbar-bar:focus {
+  box-shadow: inset 0 0 0 2px var(--spice-button);
+  outline: none;
+}
+
+html.ghost .Dropdown-root.is-open .Dropdown-control {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+html.ghost .Dropdown-menu {
+  background-color: var(--spice-main-elevated) !important;
+  border-radius: 0 0 12px 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.ghost .marketplace-header-icon-button {
+  border-radius: 999px;
+}

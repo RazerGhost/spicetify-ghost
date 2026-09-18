@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Ghost — lightweight glassy Spicetify theme
+   Tunables below are overwritten at runtime by the settings panel
+   (inline style on <html>), so these are just the no-JS fallbacks.
+   ========================================================================== */
+
+:root {
+  --ghost-blur: 48px;
+  --ghost-brightness: 0.45;
+  --ghost-saturation: 1.4;
+  --ghost-contrast: 1;
+  --ghost-bg-color: var(--spice-main);
+  --ghost-panel-alpha: 0.35;
+  --ghost-border-alpha: 0.06;
+  --ghost-radius: 12px;
+  --ghost-gap: 8px;
+  --ghost-fade: 900ms; /* replaced by Spotify's crossfade time when that's on */
+
+  --ghost-tint: 0%;
+  --ghost-banner-blur: 0px;
+  --ghost-player-width: 100%;
+  --ghost-player-height: 72px;
+
+  /* Relative colour syntax (not --spice-rgb-*) so these follow the accent tint. */
+  --ghost-panel: rgb(from var(--spice-main) r g b / var(--ghost-panel-alpha));
+  --ghost-border: rgba(var(--spice-rgb-text), var(--ghost-border-alpha));
+  --ghost-sticky: rgb(from var(--spice-main) r g b / 0.6);
+}
+
+/* Register the colours that are built from color-mix()/relative colours as real
+   <color> properties. Unregistered, they stay token streams and Chromium
+   re-computes the mix for every element that uses them (thousands per page
+   change); registered, it's computed once on <html> and inherited as a colour. */
+@property --spice-main { syntax: "<color>"; inherits: true; initial-value: #121212; }
+@property --spice-main-elevated { syntax: "<color>"; inherits: true; initial-value: #1a1a1a; }
+@property --spice-highlight { syntax: "<color>"; inherits: true; initial-value: #262626; }
+@property --spice-highlight-elevated { syntax: "<color>"; inherits: true; initial-value: #303030; }
+@property --spice-sidebar { syntax: "<color>"; inherits: true; initial-value: #121212; }
+@property --spice-player { syntax: "<color>"; inherits: true; initial-value: #121212; }
+@property --spice-card { syntax: "<color>"; inherits: true; initial-value: #1e1e1e; }
+@property --spice-subtext { syntax: "<color>"; inherits: true; initial-value: #b3b3b3; }
+@property --ghost-panel { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --ghost-sticky { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --ghost-border { syntax: "<color>"; inherits: true; initial-value: transparent; }
+
+/* Accent tint — a lightweight take on Lucid's Material-You palette. Instead of
+   generating tonal palettes in JS, mix the accent (which follows the album art)
+   into the base surfaces with color-mix(). --ghost-base-* hold the original
+   color.ini values (copied by store.ts), since a variable can't mix with itself.
+   Spotify's --background-* / --text-subdued all derive from these. */
+html.ghost-tinted {
+  --spice-main: color-mix(in oklab, var(--ghost-base-main), var(--spice-button) var(--ghost-tint));
+  --spice-main-elevated: color-mix(in oklab, var(--ghost-base-main-elevated), var(--spice-button) var(--ghost-tint));
+  --spice-highlight: color-mix(in oklab, var(--ghost-base-highlight), var(--spice-button) var(--ghost-tint));
+  --spice-highlight-elevated: color-mix(in oklab, var(--ghost-base-highlight-elevated), var(--spice-button) var(--ghost-tint));
+  --spice-sidebar: color-mix(in oklab, var(--ghost-base-sidebar), var(--spice-button) var(--ghost-tint));
+  --spice-player: color-mix(in oklab, var(--ghost-base-player), var(--spice-button) var(--ghost-tint));
+  --spice-card: color-mix(in oklab, var(--ghost-base-card), var(--spice-button) var(--ghost-tint));
+  --spice-subtext: color-mix(in oklab, var(--ghost-base-subtext), var(--spice-button) calc(var(--ghost-tint) * 1.5));
+}
+
+/* Spotify's own gap between panels — set inline on .Root, hence !important. */
+html.ghost .Root {
+  --panel-gap: var(--ghost-gap) !important;
+}

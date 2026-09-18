@@ -2,9 +2,9 @@
 // Run after a Spotify update:  npm run check
 //
 // Collects from src/:
-//   - class names, ids and [data-testid]/[data-encore-id] values in user.css selectors
-//   - Spotify CSS variables that user.css overrides (e.g. --panel-gap, --background-base)
-//   - class names in className="…" strings in .tsx files
+//   - class names, ids and [data-testid]/[data-encore-id] values in styles/*.css selectors
+//   - Spotify CSS variables the styles override (e.g. --panel-gap, --background-base)
+//   - class names / data-testids in className="…" and selector strings in .ts/.tsx
 // …and searches the installed xpui files (Spotify + Spicetify's helper scripts) for each.
 // Ghost's own names (ghost*, --ghost-*, --spice-*) are skipped.
 
@@ -46,25 +46,28 @@ function add(token, kind, from) {
   hooks.get(key).from.add(from);
 }
 
-const css = readFileSync(join(SRC, "user.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+for (const file of walk(join(SRC, "styles"), /\.css$/)) {
+  const from = relative(SRC, file);
+  const css = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 
-// Rule preludes = text before each "{" that isn't an at-rule or keyframe step.
-for (const [, raw] of css.matchAll(/([^{};]+)\{/g)) {
-  const prelude = raw.trim();
-  if (!prelude || prelude.startsWith("@") || /^(from|to|[\d.]+%)$/.test(prelude)) continue;
-  for (const [, c] of prelude.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) add(c, "class", "user.css");
-  for (const [, id] of prelude.matchAll(/#([_a-zA-Z][\w-]*)/g)) add(id, "id", "user.css");
-  for (const [, , v] of prelude.matchAll(/\[(data-testid|data-encore-id)[~|^$*]?=["']?([^"'\]]+)/g))
-    add(v, "attr", "user.css");
+  // Rule preludes = text before each "{" that isn't an at-rule or keyframe step.
+  for (const [, raw] of css.matchAll(/([^{};]+)\{/g)) {
+    const prelude = raw.trim();
+    if (!prelude || prelude.startsWith("@") || /^(from|to|[\d.]+%)$/.test(prelude)) continue;
+    for (const [, c] of prelude.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) add(c, "class", from);
+    for (const [, id] of prelude.matchAll(/#([_a-zA-Z][\w-]*)/g)) add(id, "id", from);
+    for (const [, , v] of prelude.matchAll(/\[(data-testid|data-encore-id)[~|^$*]?=["']?([^"'\]]+)/g))
+      add(v, "attr", from);
+  }
+
+  // Custom properties we *set* that belong to Spotify — only inside declaration
+  // blocks, so selectors like `.ghost-fs--idle :is(…)` aren't mistaken for one.
+  for (const [, block] of css.matchAll(/\{([^{}]*)\}/g))
+    for (const [, prop] of block.matchAll(/(?:^|;)\s*(--[\w-]+)\s*:/g)) add(prop, "var", from);
 }
 
-// Custom properties we *set* that belong to Spotify — only inside declaration
-// blocks, so selectors like `.ghost-fs--idle :is(…)` aren't mistaken for one.
-for (const [, block] of css.matchAll(/\{([^{}]*)\}/g))
-  for (const [, prop] of block.matchAll(/(?:^|;)\s*(--[\w-]+)\s*:/g)) add(prop, "var", "user.css");
-
-// className="…" in TSX, and classes in querySelector(All)/closest/matches("…")
-// selectors in TS/TSX.
+// className="…" in TSX, and classes in querySelector(All)/closest/matches/
+// interceptClick("…") selectors in TS/TSX.
 for (const file of walk(SRC, /\.tsx?$/)) {
   const code = readFileSync(file, "utf8");
   const from = relative(SRC, file);
@@ -72,7 +75,7 @@ for (const file of walk(SRC, /\.tsx?$/)) {
     for (const c of list.split(/\s+/)) add(c, "class", from);
   // `?.` allowed before the call; the string ends at the same quote it opened with,
   // so '[data-testid="x"]' is read whole.
-  for (const [, , selector] of code.matchAll(/(?:querySelector(?:All)?|closest|matches)(?:<[^>]*>)?(?:\?\.)?\(\s*(["'`])(.*?)\1/g)) {
+  for (const [, , selector] of code.matchAll(/(?:querySelector(?:All)?|closest|matches|interceptClick)(?:<[^>]*>)?(?:\?\.)?\(\s*(["'`])(.*?)\1/g)) {
     for (const [, c] of selector.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) add(c, "class", from);
     for (const [, , v] of selector.matchAll(/\[(data-testid|data-encore-id)[~|^$*]?=["']?([^"'\]]+)/g)) add(v, "attr", from);
   }

@@ -6,29 +6,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { albumArt } from "../background";
+import { Icon } from "../icons";
 import { useCurrentTrack, useLyrics, usePlaying } from "./hooks";
 import { LyricsBody } from "./LyricsBody";
-
-const icon = (d: string, size = 20) => (
-  <svg viewBox="0 0 16 16" width={size} height={size} fill="currentColor" aria-hidden="true">
-    <path d={d} />
-  </svg>
-);
-
-const ICONS = {
-  play: "M3 1.7v12.6a.7.7 0 0 0 1.05.6l10.9-6.3a.7.7 0 0 0 0-1.2L4.05 1.1A.7.7 0 0 0 3 1.7Z",
-  pause: "M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7Zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6Z",
-  next: "M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.1A.7.7 0 0 0 1 1.7v12.6a.7.7 0 0 0 1.05.6L12 9.15v5.15a.7.7 0 0 0 .7.7h1.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.6Z",
-  prev: "M3.3 1a.7.7 0 0 1 .7.7v5.15l9.95-5.75a.7.7 0 0 1 1.05.6v12.6a.7.7 0 0 1-1.05.6L4 9.15v5.15a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.6Z",
-  close: "M2.47 2.47a.75.75 0 0 1 1.06 0L8 6.94l4.47-4.47a.75.75 0 1 1 1.06 1.06L9.06 8l4.47 4.47a.75.75 0 1 1-1.06 1.06L8 9.06l-4.47 4.47a.75.75 0 0 1-1.06-1.06L6.94 8 2.47 3.53a.75.75 0 0 1 0-1.06Z",
-};
 
 function formatTime(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// Updated per frame straight on the DOM (no React re-renders).
+// Updated per frame straight on the DOM (no React re-renders), and only when
+// something visibly changed — nothing is written while paused.
 function Progress() {
   const fill = useRef<HTMLDivElement>(null);
   const elapsed = useRef<HTMLSpanElement>(null);
@@ -36,13 +24,20 @@ function Progress() {
 
   useEffect(() => {
     let frame = 0;
+    let lastPosition = -1;
+    let lastElapsed = "";
+    let lastTotal = "";
     const tick = () => {
       frame = requestAnimationFrame(tick);
       const position = Spicetify.Player.getProgress();
+      if (position === lastPosition) return;
+      lastPosition = position;
       const duration = Spicetify.Player.getDuration() || 1;
       fill.current?.style.setProperty("width", `${Math.min(100, (position / duration) * 100)}%`);
-      if (elapsed.current) elapsed.current.textContent = formatTime(position);
-      if (total.current) total.current.textContent = formatTime(duration);
+      const e = formatTime(position);
+      const t = formatTime(duration);
+      if (e !== lastElapsed && elapsed.current) elapsed.current.textContent = lastElapsed = e;
+      if (t !== lastTotal && total.current) total.current.textContent = lastTotal = t;
     };
     tick();
     return () => cancelAnimationFrame(frame);
@@ -96,7 +91,7 @@ export function FullscreenView({ onClose }: { onClose: () => void }) {
   return (
     <div className={`ghost-fs${hasLyrics ? "" : " ghost-fs--no-lyrics"}${idle ? " ghost-fs--idle" : ""}`}>
       <button className="ghost-round-button ghost-fs__close" onClick={onClose} title="Exit fullscreen (Esc)" aria-label="Exit fullscreen">
-        {icon(ICONS.close, 16)}
+        <Icon name="close" />
       </button>
 
       <div className="ghost-fs__now">
@@ -108,13 +103,13 @@ export function FullscreenView({ onClose }: { onClose: () => void }) {
         <Progress />
         <div className="ghost-fs__controls">
           <button className="ghost-round-button" onClick={() => Spicetify.Player.back()} aria-label="Previous">
-            {icon(ICONS.prev, 18)}
+            <Icon name="prev" size={18} />
           </button>
           <button className="ghost-round-button ghost-fs__play" onClick={() => Spicetify.Player.togglePlay()} aria-label={playing ? "Pause" : "Play"}>
-            {icon(playing ? ICONS.pause : ICONS.play, 22)}
+            <Icon name={playing ? "pause" : "play"} size={22} />
           </button>
           <button className="ghost-round-button" onClick={() => Spicetify.Player.next()} aria-label="Next">
-            {icon(ICONS.next, 18)}
+            <Icon name="next" size={18} />
           </button>
         </div>
       </div>

@@ -66,10 +66,29 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
     const elements = Array.from(root.querySelectorAll<HTMLElement>("[data-item]"));
     const states: string[] = elements.map(() => "");
     const wordsOf = new Map<HTMLElement, HTMLElement[]>();
+    // Last written --ghost-p per element, so unchanged values aren't re-written.
+    const written = new Map<HTMLElement, string>();
     let current = -2;
     let userScrollAt = 0;
     let programmatic = false;
     let frame = 0;
+    let lastTime = -1;
+    let visible = true;
+
+    const setProgress = (el: HTMLElement, value: number) => {
+      const v = value.toFixed(3);
+      if (written.get(el) === v) return;
+      written.set(el, v);
+      el.style.setProperty("--ghost-p", v);
+    };
+
+    // Stop the loop entirely while the view is off-screen or hidden (card
+    // scrolled away, everything under fullscreen), restart when it's back.
+    const io = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible && !frame) frame = requestAnimationFrame(tick);
+    });
+    io.observe(root);
 
     const onUserScroll = () => {
       if (!programmatic) userScrollAt = Date.now();
@@ -84,9 +103,15 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
       setTimeout(() => (programmatic = false), 600);
     };
 
-    const tick = () => {
+    function tick() {
+      if (!visible) {
+        frame = 0;
+        return;
+      }
       frame = requestAnimationFrame(tick);
       const t = Spicetify.Player.getProgress() / 1000 + LOOKAHEAD;
+      if (t === lastTime) return; // paused: nothing moves
+      lastTime = t;
 
       // Current = last item that has started.
       let next = -1;
@@ -102,15 +127,14 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
         }
         if (state === "active") {
           if (item.type === "interlude") {
-            el.style.setProperty("--ghost-p", String((t - item.start) / (item.end - item.start)));
+            setProgress(el, (t - item.start) / (item.end - item.start));
           } else if (item.line.words || item.line.background?.words) {
             let words = wordsOf.get(el);
             if (!words) wordsOf.set(el, (words = Array.from(el.querySelectorAll<HTMLElement>(".ghost-lyrics__word"))));
             for (const w of words) {
               const start = Number(w.dataset.start);
               const end = Number(w.dataset.end);
-              const p = end > start ? Math.min(1, Math.max(0, (t - start) / (end - start))) : t >= start ? 1 : 0;
-              w.style.setProperty("--ghost-p", p.toFixed(3));
+              setProgress(w, end > start ? Math.min(1, Math.max(0, (t - start) / (end - start))) : t >= start ? 1 : 0);
             }
           }
         }
@@ -123,10 +147,11 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
         const target = elements[Math.max(0, next)];
         if (target && Date.now() - userScrollAt > USER_SCROLL_PAUSE) scrollTo(target, !first);
       }
-    };
+    }
     tick();
 
     return () => {
+      io.disconnect();
       cancelAnimationFrame(frame);
       root.removeEventListener("wheel", onUserScroll);
       root.removeEventListener("touchmove", onUserScroll);

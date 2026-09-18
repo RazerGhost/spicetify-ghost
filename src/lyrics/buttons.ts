@@ -3,35 +3,23 @@
 //     only ever navigates *to* /lyrics. On the lyrics page, make it go back.
 //   - fullscreen-mode-button: open Ghost's fullscreen instead of Spotify's cinema
 //     mode (setting "replaceFullscreen").
-// A capture-phase listener on document runs before React's handlers (which sit
-// on the app root), so stopping it there means Spotify never sees the click.
 
+import { interceptClick } from "../intercept";
+import { history } from "../platform";
 import { getSettings } from "../settings/store";
 import { openFullscreen } from "./fullscreen";
 
 export function initPlayerButtons() {
-  const history = (Spicetify.Platform as any).History;
+  interceptClick('[data-testid="lyrics-button"]', () => {
+    if (!getSettings().lyricsPage || history().location.pathname !== "/lyrics") return false;
+    history().goBack();
+    return true;
+  });
 
-  document.addEventListener(
-    "click",
-    (e) => {
-      const target = e.target as Element | null;
-      const s = getSettings();
-      if (!target?.closest || !s.lyricsPage) return;
-
-      if (target.closest('[data-testid="lyrics-button"]') && history.location.pathname === "/lyrics") {
-        e.preventDefault();
-        e.stopPropagation();
-        history.goBack();
-        return;
-      }
-
-      if (target.closest('[data-testid="fullscreen-mode-button"]') && s.replaceFullscreen) {
-        e.preventDefault();
-        e.stopPropagation();
-        openFullscreen();
-      }
-    },
-    true,
-  );
+  interceptClick('[data-testid="fullscreen-mode-button"]', () => {
+    const s = getSettings();
+    if (!s.lyricsPage || !s.replaceFullscreen) return false;
+    openFullscreen();
+    return true;
+  });
 }

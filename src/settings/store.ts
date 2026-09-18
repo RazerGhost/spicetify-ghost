@@ -112,9 +112,20 @@ let current = load();
 
 export const getSettings = () => current;
 
+// Sliders fire ~60 changes/s while dragging: apply instantly, persist shortly after.
+let persistTimer: number | undefined;
+function persist() {
+  clearTimeout(persistTimer);
+  persistTimer = window.setTimeout(() => localStorage.setItem(KEY, JSON.stringify(current)), 250);
+}
+window.addEventListener("beforeunload", () => {
+  clearTimeout(persistTimer);
+  localStorage.setItem(KEY, JSON.stringify(current));
+});
+
 export function setSettings(patch: Partial<Settings>) {
   current = { ...current, ...patch };
-  localStorage.setItem(KEY, JSON.stringify(current));
+  persist();
   applySettings();
   listeners.forEach((l) => l());
 }
@@ -124,6 +135,19 @@ export const resetSettings = () => setSettings(DEFAULTS);
 export function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => void listeners.delete(listener);
+}
+
+/** Call `onChange` only when the selected setting(s) change. `select` returns a
+ *  value or array of values; they're compared by value. */
+export function watchSettings(select: (s: Settings) => unknown, onChange: () => void) {
+  const key = () => JSON.stringify(select(current));
+  let last = key();
+  return subscribe(() => {
+    const next = key();
+    if (next === last) return;
+    last = next;
+    onChange();
+  });
 }
 
 // Surfaces that the accent tint is mixed into (see html.ghost-tinted in user.css).

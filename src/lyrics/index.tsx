@@ -4,8 +4,9 @@
 // Also sets up the now-playing card and takes over Spotify's lyrics/fullscreen
 // buttons (buttons.ts).
 
+import { history } from "../platform";
 import { mount } from "../react";
-import { getSettings, subscribe } from "../settings/store";
+import { getSettings, watchSettings } from "../settings/store";
 import { initPlayerButtons } from "./buttons";
 import { LyricsPage } from "./LyricsPage";
 import { initLyricsCard } from "./npvCard";
@@ -13,7 +14,6 @@ import { initLyricsCard } from "./npvCard";
 const ROUTE = "/lyrics";
 
 function initLyricsPage() {
-  const history = (Spicetify.Platform as any).History;
   let unmount: (() => void) | null = null;
   let host: HTMLElement | null = null;
 
@@ -26,7 +26,7 @@ function initLyricsPage() {
   };
 
   const sync = () => {
-    const wanted = getSettings().lyricsPage && history.location.pathname === ROUTE;
+    const wanted = getSettings().lyricsPage && history().location.pathname === ROUTE;
     const mainView = document.querySelector<HTMLElement>(".Root__main-view");
 
     // Re-mount if Spotify re-rendered the main view and dropped our host.
@@ -43,8 +43,8 @@ function initLyricsPage() {
     }
   };
 
-  history.listen(sync);
-  subscribe(sync);
+  history().listen(sync);
+  watchSettings((s) => s.lyricsPage, sync);
   sync();
 }
 

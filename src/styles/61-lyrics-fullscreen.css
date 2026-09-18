@@ -1,0 +1,149 @@
+/* --- Fullscreen (src/lyrics/FullscreenView.tsx) ---------------------------
+   .Root is hidden, so #ghost-bg (the album-art background) is what's behind. */
+
+/* content-visibility, not just visibility: descendants can override
+   visibility:hidden with visibility:visible — Spotify's canvas video (moved into
+   the now-playing view from #video-player-parking-surface) did, and showed on
+   top of fullscreen. content-visibility:hidden skips rendering the whole subtree,
+   which also means Spotify's UI costs nothing while fullscreen is open. */
+html.ghost-fullscreen .Root {
+  visibility: hidden;
+  content-visibility: hidden;
+}
+
+#ghost-fs-host {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.ghost-fs {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(280px, 36%) 1fr;
+  align-items: center;
+  gap: 6vw;
+  padding: 6vh 6vw;
+  color: var(--spice-text);
+}
+
+.ghost-fs--no-lyrics {
+  grid-template-columns: minmax(280px, 460px);
+  justify-content: center;
+}
+
+.ghost-fs--idle {
+  cursor: none;
+}
+
+.ghost-fs__close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+.ghost-fs--idle :is(.ghost-fs__close, .ghost-fs__controls, .ghost-fs__progress) {
+  opacity: 0;
+}
+
+/* The whole block (cover, title, progress, controls) takes the cover's width,
+   so the progress bar lines up with the art. */
+.ghost-fs__now {
+  width: min(100%, 46vh);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.ghost-fs__cover {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.ghost-fs__title {
+  font-size: clamp(1.5rem, 2.6vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.ghost-fs__artist {
+  margin-top: 4px;
+  font-size: 1.15rem;
+  color: var(--spice-subtext);
+}
+
+.ghost-fs__progress {
+  transition: opacity 0.3s;
+}
+
+/* 16px tall click target; the 4px track is drawn as a centred background. */
+.ghost-fs__bar {
+  height: 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background: linear-gradient(rgba(var(--spice-rgb-text), 0.2), rgba(var(--spice-rgb-text), 0.2)) center / 100% 4px no-repeat;
+}
+
+.ghost-fs__fill {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--spice-text);
+}
+
+.ghost-fs__bar:hover .ghost-fs__fill {
+  background: var(--spice-button);
+}
+
+.ghost-fs__times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--spice-subtext);
+}
+
+.ghost-fs__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  transition: opacity 0.3s;
+}
+
+.ghost-fs__controls .ghost-round-button {
+  width: 48px;
+  height: 48px;
+}
+
+.ghost-fs__controls .ghost-fs__play {
+  width: 64px;
+  height: 64px;
+  background: var(--spice-text);
+  color: var(--spice-main);
+}
+
+.ghost-fs__controls .ghost-fs__play:hover {
+  background: var(--spice-button);
+}
+
+.ghost-fs__lyrics {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ghost-lyrics--fullscreen {
+  padding: 40vh 0 50vh;
+}
+
+.ghost-lyrics--fullscreen .ghost-lyrics__line {
+  font-size: calc(var(--ghost-lyrics-size) * 1.2);
+}

@@ -1,0 +1,33 @@
+/* --- Carousels (Home shelves, search, …) -----------------------------------
+   Spotify's carousel (xpui-modules.js) bleeds past the content column into the
+   panel padding (negative --margin-start / --margin-end on the root) and hides
+   the overflow with ::before/::after overlays painted in solid --spice-main —
+   invisible or dark bands on glass. Instead: drop the overlays and mask the
+   scrolling viewport (.search-searchCategory-categoryGrid, where Spotify's own
+   "mask" edge mode goes) so cards stop at the content column with a short fade.
+   The ‹ › buttons (.search-searchCategory-carousel) are a sibling, so they stay. */
+html.ghost .search-searchCategory-contentArea {
+  --ghost-bleed-start: max(0px, calc(-1 * var(--margin-start, 0px)));
+  --ghost-bleed-end: max(0px, calc(-1 * var(--margin-end, 0px)));
+}
+
+html.ghost .search-searchCategory-contentArea::before,
+html.ghost .search-searchCategory-contentArea::after {
+  display: none;
+}
+
+/* The ‹ › buttons' container spans the full (bleeding) width; pull it in to
+   the visible area so the buttons sit where the cards start and end. */
+html.ghost .search-searchCategory-carousel {
+  inset-inline: var(--ghost-bleed-start) var(--ghost-bleed-end);
+}
+
+html.ghost .search-searchCategory-categoryGrid {
+  mask-image: linear-gradient(
+    to right,
+    transparent calc(var(--ghost-bleed-start) - 20px),
+    #000 var(--ghost-bleed-start),
+    #000 calc(100% - var(--ghost-bleed-end)),
+    transparent calc(100% - var(--ghost-bleed-end) + 20px)
+  );
+}

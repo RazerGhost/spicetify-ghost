@@ -9,7 +9,8 @@
 // the canvas. Custom images without CORS fall back to the live CSS filter
 // (.ghost-bg__layer--live in user.css).
 
-import { getSettings, subscribe, type Settings } from "./settings/store";
+import { platform } from "./platform";
+import { getSettings, watchSettings, type Settings } from "./settings/store";
 
 /** Canvas is rendered at 1/SCALE of the window and upscaled; invisible after a heavy blur. */
 const SCALE = 8;
@@ -217,14 +218,20 @@ const readable = (hex: string | undefined) => {
 //    fails in current Spotify builds ("Resolver not found!").
 // 2. The GraphQL query Spotify's own UI uses (fetchExtractedColors, exposed by
 //    Spicetify in GraphQL.Definitions) for the cover image.
+// After the first failure, skip colorExtractor for the session — in builds where
+// it's broken it fails every time, costing a request per song.
+let colorExtractorWorks = true;
+
 async function artColors(): Promise<string[]> {
   const uri = Spicetify.Player.data?.item?.uri;
   if (!uri) return [];
-  try {
-    const c = await Spicetify.colorExtractor(uri);
-    if (c) return [c.VIBRANT_NON_ALARMING, c.VIBRANT, c.LIGHT_VIBRANT, c.PROMINENT];
-  } catch {
-    // fall through to GraphQL
+  if (colorExtractorWorks) {
+    try {
+      const c = await Spicetify.colorExtractor(uri);
+      if (c) return [c.VIBRANT_NON_ALARMING, c.VIBRANT, c.LIGHT_VIBRANT, c.PROMINENT];
+    } catch {
+      colorExtractorWorks = false;
+    }
   }
   const image = albumArt();
   const query = (Spicetify.GraphQL as any)?.Definitions?.fetchExtractedColors;
@@ -253,13 +260,21 @@ async function updateAccent() {
 
 // Match the background crossfade to Spotify's own crossfade setting (like Hazy).
 // PlayerAPI._prefs is internal, so fall back to the CSS default on any failure.
+// Re-read at most once a minute rather than on every song (two requests each).
+const FADE_TTL = 60_000;
+let fadeReadAt = 0;
+
 async function syncFadeTime() {
-  const prefs = (Spicetify.Platform as any)?.PlayerAPI?._prefs;
+  if (Date.now() - fadeReadAt < FADE_TTL) return;
+  fadeReadAt = Date.now();
+  const prefs = platform().PlayerAPI?._prefs;
   try {
+    if (!prefs) throw 0;
     const on = await prefs.get({ key: "audio.crossfade_v2" });
-    if (!on.entries["audio.crossfade_v2"].bool) throw 0;
+    if (!on.entries["audio.crossfade_v2"]?.bool) throw 0;
     const time = await prefs.get({ key: "audio.crossfade.time_v2" });
-    const ms = time.entries["audio.crossfade.time_v2"].number;
+    const ms = time.entries["audio.crossfade.time_v2"]?.number;
+    if (!ms) throw 0;
     document.documentElement.style.setProperty("--ghost-fade", `${ms}ms`);
   } catch {
     document.documentElement.style.removeProperty("--ghost-fade");
@@ -297,27 +312,19 @@ export function initBackground() {
 
   // Source/accent settings → reload; filter settings → re-bake (debounced, since
   // sliders fire continuously); window size → re-bake for the new aspect ratio.
-  const sourceKey = (s: Settings) => [s.bgSource, s.bgImageUrl, s.accentSource, s.accentColor].join("|");
-  const filterKey = (s: Settings) => [s.blur, s.brightness, s.saturation, s.contrast].join("|");
-  let lastSource = sourceKey(getSettings());
-  let lastFilter = filterKey(getSettings());
   let rebakeTimer: number | undefined;
   const rebakeSoon = (delay: number) => {
     clearTimeout(rebakeTimer);
     rebakeTimer = window.setTimeout(rebake, delay);
   };
 
-  subscribe(() => {
-    const s = getSettings();
-    if (sourceKey(s) !== lastSource) {
-      lastSource = sourceKey(s);
+  watchSettings(
+    (s) => [s.bgSource, s.bgImageUrl, s.accentSource, s.accentColor],
+    () => {
       updateImage();
       updateAccent();
-    }
-    if (filterKey(s) !== lastFilter) {
-      lastFilter = filterKey(s);
-      rebakeSoon(60);
-    }
-  });
+    },
+  );
+  watchSettings((s) => [s.blur, s.brightness, s.saturation, s.contrast], () => rebakeSoon(60));
   window.addEventListener("resize", () => rebakeSoon(300));
 }

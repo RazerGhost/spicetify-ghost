@@ -1,0 +1,17 @@
+/* --- Optional layout tweaks (settings → Layout) ------------------------- */
+
+/* Fade the main view's content out at its top and bottom edges. */
+html.ghost-fade-edges .main-view-container__scroll-node {
+  mask-image: linear-gradient(transparent, #000 24px, #000 calc(100% - 48px), transparent);
+}
+
+/* Closed right sidebar leaves a 40px "peek" strip. Hide it; its grid column
+   collapses to 0 but the grid gap stays, so pull the main view over it.
+   .ghost-sidebar-collapsed is set by sidebar.ts (a :has() here was expensive). */
+html.ghost-hide-collapsed-sidebar.ghost-sidebar-collapsed .Root__right-sidebar {
+  display: none !important;
+}
+
+html.ghost-hide-collapsed-sidebar.ghost-sidebar-collapsed .Root__main-view {
+  margin-inline-end: calc(var(--panel-gap) * -1);
+}

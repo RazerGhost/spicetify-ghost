@@ -1,15 +1,17 @@
 // Bundles src/ into dist/ (theme.js, user.css, color.ini).
 // React is NOT bundled: imports of react / react-dom / react/jsx-runtime are
 // redirected to the copies Spotify already ships (Spicetify.React & co).
+// user.css is assembled from src/styles/*.css in file-name order (00-…, 10-…).
 //
 //   node build.mjs         one-off production build
 //   node build.mjs --dev   rebuild on change (pair with `spicetify watch -s` yourself)
 
 import * as esbuild from "esbuild";
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { watch } from "node:fs";
 
 const dev = process.argv.includes("--dev");
+const STYLES = "src/styles";
 
 const globals = {
   react: "Spicetify.React",
@@ -33,14 +35,21 @@ const spicetifyGlobals = {
   },
 };
 
-const staticFiles = [
-  ["src/user.css", "dist/user.css"],
-  ["color.ini", "dist/color.ini"],
-];
+/** Write via a temp file + rename, so Spicetify never picks up a half-written file. */
+async function writeAtomic(path, contents) {
+  await writeFile(`${path}.tmp`, contents);
+  await rename(`${path}.tmp`, path);
+}
 
-async function copyStatic() {
+async function buildCss() {
+  const files = (await readdir(STYLES)).filter((f) => f.endsWith(".css")).sort();
+  const parts = await Promise.all(files.map((f) => readFile(`${STYLES}/${f}`, "utf8")));
+  await writeAtomic("dist/user.css", parts.map((css, i) => `/* ${files[i]} */\n${css.trim()}\n`).join("\n"));
+}
+
+async function buildStatic() {
   await mkdir("dist", { recursive: true });
-  await Promise.all(staticFiles.map(([from, to]) => copyFile(from, to)));
+  await Promise.all([buildCss(), copyFile("color.ini", "dist/color.ini")]);
 }
 
 const options = {
@@ -58,14 +67,19 @@ const options = {
   plugins: [spicetifyGlobals],
 };
 
-await copyStatic();
+await buildStatic();
 
 if (!dev) {
   await esbuild.build(options);
 } else {
   const ctx = await esbuild.context(options);
   await ctx.watch();
-  for (const [from] of staticFiles) {
-    watch(from, () => copyStatic().catch(console.error));
-  }
+  // Editors often fire several events per save; coalesce them.
+  let timer;
+  const rebuild = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => buildStatic().catch(console.error), 50);
+  };
+  watch(STYLES, rebuild);
+  watch("color.ini", rebuild);
 }

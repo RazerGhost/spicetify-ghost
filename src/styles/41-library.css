@@ -1,0 +1,59 @@
+/* --- Library (left sidebar) ------------------------------------------------ */
+
+/* Rows: [role=row] (aria-selected="true" = the open page) > listRow > cover <img>.
+   Avoids the versioned e-10860-legacy-* classes and the localised aria-label.
+   Rounding the <img> is safe for artists: their round wrapper still clips it. */
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"] [data-encore-id="listRow"] img {
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"]:hover [data-encore-id="listRow"] img {
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px color-mix(in oklab, var(--spice-button) 45%, transparent);
+}
+
+/* Active marker: accent ring on the cover + a small accent pill at the edge. */
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"] {
+  position: relative;
+}
+
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"][aria-selected="true"] [data-encore-id="listRow"] img {
+  box-shadow: 0 0 0 2px var(--spice-button);
+}
+
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"][aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  width: 4px;
+  height: 40%;
+  transform: translateY(-50%);
+  border-radius: 0 4px 4px 0;
+  background: var(--spice-button);
+}
+
+/* Collapsed library = Spotify sets --left-sidebar-width: 72 inline
+   (COLLAPSED=72 in xpui). zoom shrinks the whole rail — covers, icons, width. */
+html.ghost-slim-rail .Root__nav-bar[style*="--left-sidebar-width: 72;"] {
+  zoom: 0.82;
+}
+
+/* Auto-hide: same overlay trick as the top bar. As an absolutely positioned grid
+   item it keeps its grid-area as containing block, while its column collapses. */
+html.ghost-library-autohide .Root__nav-bar {
+  position: absolute !important;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--above-everything-grid-area-z-index);
+  transform: translateX(calc(-100% + 10px));
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+html.ghost-library-autohide .Root__nav-bar:is(:hover, :focus-within) {
+  transform: translateX(0);
+  opacity: 1;
+}

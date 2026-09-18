@@ -1,0 +1,27 @@
+/* --- Accent ------------------------------------------------------------- */
+
+/* Spicetify maps the base colour of Spotify's green "bright accent" and
+   "positive" sets (play buttons, added/liked checks) to --spice-button-active,
+   but hover/press are hard-coded greens (#3be477 / #1abc54) in xpui-snapshot.css.
+   Derive them from the accent instead. Red/orange/blue sets are semantic
+   (errors, warnings, announcements) and stay as they are. */
+html.ghost :is(.encore-bright-accent-set, .encore-positive-set) {
+  --ghost-accent-hover: color-mix(in oklab, var(--spice-button-active), white 15%);
+  --ghost-accent-press: color-mix(in oklab, var(--spice-button-active), black 15%);
+  --background-highlight: var(--ghost-accent-hover);
+  --background-press: var(--ghost-accent-press);
+  --background-elevated-base: var(--ghost-accent-hover);
+  --background-elevated-highlight: var(--ghost-accent-hover);
+  --background-elevated-press: var(--ghost-accent-press);
+  --decorative-subdued: var(--ghost-accent-press);
+}
+
+/* Inverted (white) sets carry dark greens for accent text/icons. */
+html.ghost :is(.encore-inverted-set, .encore-inverted-light-set) {
+  --text-bright-accent: color-mix(in oklab, var(--spice-button-active), black 35%);
+  --essential-bright-accent: color-mix(in oklab, var(--spice-button-active), black 20%);
+}
+
+html.ghost ::selection {
+  background: rgba(var(--spice-rgb-button), 0.35);
+}

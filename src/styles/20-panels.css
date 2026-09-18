@@ -1,0 +1,120 @@
+/* --- Panels ------------------------------------------------------------- */
+
+html.ghost body,
+html.ghost .Root,
+html.ghost .Root__top-container {
+  background: transparent !important;
+}
+
+/* Outer chrome (top nav, now-playing bar) floats directly on the art. */
+html.ghost .Root__globalNav,
+html.ghost .Root__now-playing-bar {
+  background-color: transparent !important;
+}
+
+/* The three main panels become translucent glass. */
+html.ghost .Root__nav-bar,
+html.ghost .Root__main-view,
+html.ghost .Root__right-sidebar > *,
+html.ghost .Root__right-sidebar-peek {
+  background-color: var(--ghost-panel) !important;
+  border-radius: var(--ghost-radius) !important;
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  overflow: hidden;
+}
+
+/* Inside panels, Spotify paints --background-base again; let the panel show. */
+html.ghost .Root__nav-bar,
+html.ghost .Root__main-view,
+html.ghost .Root__right-sidebar {
+  --background-base: transparent;
+}
+
+/* Page-colour tinting. Spotify tints surfaces by setting --background-base inline
+   to the page's extracted colour (top bar, home filter-chips bar, entity header,
+   now-playing view). Matching the inline style keeps working when class hashes
+   change. Sticky bars (they fade in on scroll) get neutral glass instead of colour. */
+html.ghost .Root__main-view [style*="--background-base"]:not([style*="--background-base: transparent"]) {
+  --background-base: var(--ghost-sticky) !important;
+}
+
+html.ghost .NowPlayingView[style*="--background-base"] {
+  --background-base: transparent !important;
+}
+
+html.ghost .main-topBar-background {
+  border-radius: var(--ghost-radius) var(--ghost-radius) 0 0 !important;
+}
+
+/* Extra 60% black layer over the top bar. */
+html.ghost .main-topBar-overlay {
+  display: none;
+}
+
+/* Playlist/artist/album header: colour block + gradient from
+   --background-base-min-contrast (the grey/orange wash). */
+html.ghost .main-entityHeader-backgroundColor {
+  display: none;
+}
+
+/* Page-colour washes. Besides --background-base, Spotify paints the page colour
+   through *empty* decorative divs with an inline background-color (+ gradient/noise):
+   the Home header, the header of artists without a banner, and the action-bar
+   background behind play/follow (all hashed classes, found with ghost.pick()).
+   One structural rule covers them all. background:none rather than display:none,
+   so nothing in the layout can shift. */
+html.ghost .Root__main-view [style*="background-color"]:empty {
+  background: none !important;
+}
+
+/* The banner-less artist header also has an empty gradient/noise layer next to
+   its colour block, without an inline colour of its own. */
+html.ghost .main-entityHeader-container > [style*="background-color"] ~ :empty {
+  display: none;
+}
+
+/* Gradient behind the play/follow action bar. */
+html.ghost .playlist-playlist-actionBarBackground-background {
+  background: none !important;
+}
+
+/* Artist banner. Spotify renders it into .before-scroll-node, *behind* the
+   scrolling content, relying on that content being opaque to cover it — with
+   glass panels it would show through while scrolling. Instead, fade it out as the
+   main view scrolls, with a CSS scroll-driven animation (no JS). The scroller is
+   OverlayScrollbars' viewport — Spotify uses the same hook for its own
+   scroll timelines (--npv-scroll). timeline-scope lets the sibling see it. */
+html.ghost .main-view-container {
+  timeline-scope: --ghost-main-scroll;
+}
+
+html.ghost .main-view-container__scroll-node[data-overlayscrollbars-viewport],
+html.ghost .main-view-container__scroll-node > [data-overlayscrollbars-viewport] {
+  scroll-timeline: --ghost-main-scroll block;
+}
+
+html.ghost .before-scroll-node {
+  filter: blur(var(--ghost-banner-blur));
+  animation: ghost-banner-fade linear both;
+  animation-timeline: --ghost-main-scroll;
+  animation-range: 0 360px;
+}
+
+/* The banner (image layer + colour-overlay layer, both hashed classes, portalled
+   as .before-scroll-node > div > div) is taller than the header. Its bottom used
+   to be hidden by the action-bar gradient we removed, leaving a hard-edged strip.
+   Fade both layers out towards the bottom instead. Masked on the painted layers,
+   not the wrapper, so a zero-height wrapper can't mask everything away. */
+html.ghost .before-scroll-node > * > * {
+  mask-image: linear-gradient(#000 45%, transparent 100%);
+}
+
+@keyframes ghost-banner-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+html.ghost-banner-hide .before-scroll-node {
+  display: none;
+}

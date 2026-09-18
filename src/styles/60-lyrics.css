@@ -1,0 +1,225 @@
+/* --- Ghost Lyrics (src/lyrics) ---------------------------------------------
+   Mounted over .Root__main-view on /lyrics; Spotify's own lyrics view stays
+   mounted underneath but hidden. Per-frame state comes from LyricsView.tsx as
+   data-state (past/active/future), --ghost-d (distance from the current line,
+   0–5) and --ghost-p (0–1 progress of a word or interlude). */
+
+:root {
+  --ghost-lyrics-size: 36px;
+  --ghost-lyrics-blur: 0.8px;
+}
+
+/* content-visibility (not just visibility) so Spotify's hidden lyrics view
+   underneath isn't laid out or painted while ours covers it. */
+html.ghost-lyrics-open .Root__main-view .main-view-container {
+  visibility: hidden;
+  content-visibility: hidden;
+}
+
+/* Spotify hard-codes the lyrics button to inactive; show it as active (accent)
+   while our lyrics page is open — clicking it then goes back (buttons.ts). */
+html.ghost-lyrics-open [data-testid="lyrics-button"] {
+  color: var(--spice-button) !important;
+}
+
+#ghost-lyrics-host {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.ghost-lyrics-page {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ghost-lyrics-status {
+  margin: auto;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--spice-subtext);
+}
+
+.ghost-lyrics {
+  position: relative; /* LyricsView measures offsetTop from the scroller */
+  flex: 1;
+  overflow-y: auto;
+  padding: 35vh 8% 50vh;
+  scrollbar-width: none;
+  outline: none;
+  mask-image: linear-gradient(transparent, #000 12%, #000 80%, transparent);
+}
+
+.ghost-lyrics::-webkit-scrollbar {
+  display: none;
+}
+
+.ghost-lyrics__line {
+  margin: 0 0 0.55em;
+  font-size: var(--ghost-lyrics-size);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--spice-text);
+  opacity: 0.35;
+  cursor: pointer;
+  transform-origin: left center;
+  filter: blur(calc(var(--ghost-d, 0) * var(--ghost-lyrics-blur)));
+  /* No filter transition: on every line change all lines' blur would animate at
+     once (20+ blur animations); opacity/transform are cheap to animate. */
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.ghost-lyrics__line:hover {
+  opacity: 0.7;
+  filter: none;
+}
+
+.ghost-lyrics__line[data-state="past"] {
+  opacity: 0.5;
+}
+
+.ghost-lyrics__line[data-state="active"] {
+  opacity: 1;
+  transform: scale(1.03);
+  filter: none;
+  text-shadow: 0 0 28px color-mix(in oklab, var(--spice-button) 45%, transparent);
+}
+
+/* Duet: second singer on the right. */
+.ghost-lyrics__line--opposite {
+  text-align: end;
+  transform-origin: right center;
+}
+
+.ghost-lyrics__main,
+.ghost-lyrics__bg {
+  display: block;
+}
+
+/* Background vocals: smaller, under the main line. */
+.ghost-lyrics__bg {
+  margin-top: 0.15em;
+  font-size: 0.6em;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+/* Word sync: each word fills left→right with --ghost-p. Unsung part stays dim;
+   the soft 8% edge keeps the sweep from looking like a hard wipe. */
+.ghost-lyrics--word .ghost-lyrics__line {
+  opacity: 0.4;
+}
+
+.ghost-lyrics--word .ghost-lyrics__line[data-state="active"] {
+  opacity: 1;
+}
+
+.ghost-lyrics__word {
+  --ghost-p: 0;
+  background-image: linear-gradient(
+    90deg,
+    var(--spice-text) calc(var(--ghost-p) * 100% - 8%),
+    rgba(var(--spice-rgb-text), 0.35) calc(var(--ghost-p) * 100% + 8%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ghost-lyrics__line[data-state="past"] .ghost-lyrics__word {
+  --ghost-p: 1 !important;
+}
+
+.ghost-lyrics__line[data-state="future"] .ghost-lyrics__word {
+  --ghost-p: 0 !important;
+}
+
+/* Static (unsynced) lyrics: everything readable, nothing clickable. */
+.ghost-lyrics--static .ghost-lyrics__line {
+  opacity: 0.9;
+  filter: none;
+  cursor: default;
+  font-size: calc(var(--ghost-lyrics-size) * 0.7);
+}
+
+/* Interlude: three dots filling up over the instrumental gap; collapsed
+   unless active. */
+.ghost-lyrics__interlude {
+  --ghost-p: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: height 0.35s ease, margin 0.35s ease, opacity 0.35s ease;
+}
+
+.ghost-lyrics__interlude[data-state="active"] {
+  height: calc(var(--ghost-lyrics-size) * 0.6);
+  margin: 0 0 0.55em;
+  opacity: 1;
+}
+
+/* Explicit width + height (not aspect-ratio): the flex row would otherwise
+   stretch the dots to its height and make them oval. */
+.ghost-lyrics__interlude span {
+  flex: none;
+  width: calc(var(--ghost-lyrics-size) * 0.35);
+  height: calc(var(--ghost-lyrics-size) * 0.35);
+  border-radius: 50%;
+  background: var(--spice-text);
+  opacity: calc(0.25 + 0.75 * clamp(0, var(--ghost-p) * 3, 1));
+}
+
+.ghost-lyrics__interlude span:nth-child(2) {
+  opacity: calc(0.25 + 0.75 * clamp(0, var(--ghost-p) * 3 - 1, 1));
+}
+
+.ghost-lyrics__interlude span:nth-child(3) {
+  opacity: calc(0.25 + 0.75 * clamp(0, var(--ghost-p) * 3 - 2, 1));
+}
+
+.ghost-lyrics__credit {
+  margin-top: 3em;
+  font-size: 0.8rem;
+  color: var(--spice-subtext);
+  opacity: 0.7;
+}
+
+/* Shared round glass button (lyrics page, card, fullscreen). */
+.ghost-round-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(var(--spice-rgb-text), 0.08);
+  color: var(--spice-text);
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s, opacity 0.3s;
+}
+
+.ghost-round-button:hover {
+  background: color-mix(in oklab, var(--spice-button) 30%, transparent);
+}
+
+.ghost-round-button:active {
+  transform: scale(0.94);
+}
+
+.ghost-lyrics-page__fullscreen {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+}
