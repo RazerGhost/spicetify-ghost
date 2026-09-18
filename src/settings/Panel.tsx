@@ -118,6 +118,7 @@ const SECTIONS: { title: string; controls: ControlDef[] }[] = [
       { kind: "slider", key: "gap", label: "Panel gap", min: 0, max: 24, unit: "px" },
       { kind: "toggle", key: "fadeEdges", label: "Fade content at edges", hint: "Soft fade at the top and bottom of the main view." },
       { kind: "toggle", key: "hideCollapsedSidebar", label: "Hide collapsed right sidebar", hint: "Removes the leftover strip when the right sidebar is closed." },
+      { kind: "toggle", key: "canvasExpand", label: "Enlarge canvas on click", hint: "Spotify's click-to-enlarge on the now-playing video. Its animation stutters, so it's off by default." },
     ],
   },
 ];

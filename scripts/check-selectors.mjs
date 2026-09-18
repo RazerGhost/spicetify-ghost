@@ -63,14 +63,19 @@ for (const [, raw] of css.matchAll(/([^{};]+)\{/g)) {
 for (const [, block] of css.matchAll(/\{([^{}]*)\}/g))
   for (const [, prop] of block.matchAll(/(?:^|;)\s*(--[\w-]+)\s*:/g)) add(prop, "var", "user.css");
 
-// className="…" in TSX, and classes in querySelector(All)("…") selectors in TS/TSX.
+// className="…" in TSX, and classes in querySelector(All)/closest/matches("…")
+// selectors in TS/TSX.
 for (const file of walk(SRC, /\.tsx?$/)) {
   const code = readFileSync(file, "utf8");
   const from = relative(SRC, file);
   for (const [, list] of code.matchAll(/className="([^"]+)"/g))
     for (const c of list.split(/\s+/)) add(c, "class", from);
-  for (const [, selector] of code.matchAll(/querySelector(?:All)?(?:<[^>]*>)?\(\s*["'`]([^"'`]+)["'`]/g))
+  // `?.` allowed before the call; the string ends at the same quote it opened with,
+  // so '[data-testid="x"]' is read whole.
+  for (const [, , selector] of code.matchAll(/(?:querySelector(?:All)?|closest|matches)(?:<[^>]*>)?(?:\?\.)?\(\s*(["'`])(.*?)\1/g)) {
     for (const [, c] of selector.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) add(c, "class", from);
+    for (const [, , v] of selector.matchAll(/\[(data-testid|data-encore-id)[~|^$*]?=["']?([^"'\]]+)/g)) add(v, "attr", from);
+  }
 }
 
 // --- search the installed Spotify ----------------------------------------------

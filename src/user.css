@@ -27,6 +27,22 @@
   --ghost-sticky: rgb(from var(--spice-main) r g b / 0.6);
 }
 
+/* Register the colours that are built from color-mix()/relative colours as real
+   <color> properties. Unregistered, they stay token streams and Chromium
+   re-computes the mix for every element that uses them (thousands per page
+   change); registered, it's computed once on <html> and inherited as a colour. */
+@property --spice-main { syntax: "<color>"; inherits: true; initial-value: #121212; }
+@property --spice-main-elevated { syntax: "<color>"; inherits: true; initial-value: #1a1a1a; }
+@property --spice-highlight { syntax: "<color>"; inherits: true; initial-value: #262626; }
+@property --spice-highlight-elevated { syntax: "<color>"; inherits: true; initial-value: #303030; }
+@property --spice-sidebar { syntax: "<color>"; inherits: true; initial-value: #121212; }
+@property --spice-player { syntax: "<color>"; inherits: true; initial-value: #121212; }
+@property --spice-card { syntax: "<color>"; inherits: true; initial-value: #1e1e1e; }
+@property --spice-subtext { syntax: "<color>"; inherits: true; initial-value: #b3b3b3; }
+@property --ghost-panel { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --ghost-sticky { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --ghost-border { syntax: "<color>"; inherits: true; initial-value: transparent; }
+
 /* Accent tint — a lightweight take on Lucid's Material-You palette. Instead of
    generating tonal palettes in JS, mix the accent (which follows the album art)
    into the base surfaces with color-mix(). --ghost-base-* hold the original
@@ -68,14 +84,35 @@ body {
   background: var(--ghost-bg-color);
 }
 
+/* The image is pre-blurred and colour-adjusted in a small canvas by
+   background.ts, so the layers carry no live filter (a full-window CSS blur was
+   re-applied on every redrawn frame — page changes, scrolling). */
 .ghost-bg__layer {
   position: absolute;
-  inset: calc(var(--ghost-blur) * -2); /* hide the blur's soft edges */
+  inset: 0;
   opacity: 0;
   transition: opacity var(--ghost-fade) ease;
+  will-change: opacity;
+}
+
+/* Fallback for custom images without CORS (can't be baked): live CSS filter. */
+.ghost-bg__layer--live {
+  inset: calc(var(--ghost-blur) * -2); /* hide the blur's soft edges */
   filter: blur(var(--ghost-blur)) brightness(var(--ghost-brightness)) saturate(var(--ghost-saturation))
     contrast(var(--ghost-contrast));
-  will-change: opacity;
+}
+
+/* Animated mode rotates the layer. A rotating rectangle only keeps the window
+   covered if it's at least the window's diagonal in every direction, so make it
+   a centred square of 150vmax (diagonal / longest side is at most √2 ≈ 1.42).
+   `translate` (not transform) centres it, so the rotate animation doesn't clash. */
+html.ghost-animated .ghost-bg__layer {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 150vmax;
+  height: 150vmax;
+  translate: -50% -50%;
 }
 
 /* Solid-colour mode: no image layers at all. */
@@ -95,6 +132,8 @@ html.ghost-bg-solid .ghost-bg__layer {
 
 /* Animated mode: two extra rotated copies drift over the base image
    (a CSS-only take on Lucid's WebGL shader). */
+/* The copies are the already-blurred image, so soften their circular edge with
+   a radial mask (they no longer inherit a live blur from the layer). */
 .ghost-bg__layer::before,
 .ghost-bg__layer::after {
   content: "";
@@ -102,6 +141,7 @@ html.ghost-bg-solid .ghost-bg__layer {
   width: 75%;
   aspect-ratio: 1;
   border-radius: 50%;
+  mask-image: radial-gradient(closest-side, #000 55%, transparent);
   display: none;
 }
 
@@ -633,6 +673,12 @@ html.ghost .search-searchCategory-contentArea::after {
   display: none;
 }
 
+/* The ‹ › buttons' container spans the full (bleeding) width; pull it in to
+   the visible area so the buttons sit where the cards start and end. */
+html.ghost .search-searchCategory-carousel {
+  inset-inline: var(--ghost-bleed-start) var(--ghost-bleed-end);
+}
+
 html.ghost .search-searchCategory-categoryGrid {
   mask-image: linear-gradient(
     to right,
@@ -712,7 +758,9 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
   cursor: pointer;
   transform-origin: left center;
   filter: blur(calc(var(--ghost-d, 0) * var(--ghost-lyrics-blur)));
-  transition: opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease;
+  /* No filter transition: on every line change all lines' blur would animate at
+     once (20+ blur animations); opacity/transform are cheap to animate. */
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 .ghost-lyrics__line:hover {
@@ -1025,6 +1073,9 @@ html.ghost-fullscreen .Root {
 /* --- Lyrics card in the now-playing view (src/lyrics/npvCard.tsx) --------- */
 
 .ghost-lyrics-card {
+  /* Isolate the card: Spotify animates the now-playing panel (e.g. when the
+     canvas expands) and the card shouldn't re-layout or repaint with it. */
+  contain: layout paint;
   margin-top: 16px;
   padding: 12px 16px 0;
   border-radius: var(--ghost-radius);
@@ -1066,6 +1117,12 @@ html.ghost-fullscreen .Root {
 .ghost-lyrics--card .ghost-lyrics__line {
   font-size: 1.2rem;
   margin-bottom: 0.5em;
+}
+
+/* No distance blur in the card: each blurred line is its own layer, and the
+   panel moves the card around while animating. Opacity carries the hierarchy. */
+.ghost-lyrics--card .ghost-lyrics__line {
+  filter: none;
 }
 
 .ghost-lyrics--card .ghost-lyrics__line[data-state="active"] {

@@ -51,6 +51,7 @@ export type Settings = {
   gap: number; // px
   fadeEdges: boolean;
   hideCollapsedSidebar: boolean;
+  canvasExpand: boolean;
 };
 
 export const DEFAULTS: Settings = {
@@ -89,6 +90,7 @@ export const DEFAULTS: Settings = {
   gap: 8,
   fadeEdges: false,
   hideCollapsedSidebar: false,
+  canvasExpand: false,
 };
 
 const KEY = "ghost:settings";
