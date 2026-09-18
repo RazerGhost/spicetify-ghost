@@ -1,18 +1,33 @@
 // Dev-only console helpers (bundled only by `npm run dev`). Open Spotify DevTools
 // (`spicetify enable-devtools`, then Ctrl+Shift+I) and use:
 //
-//   ghost.pick()           click anywhere: lists EVERY element stacked under that
-//                          point (even ones covered by others) and what each paints
+//   ghost.pick()           click anywhere: every element stacked under that point
+//                          (even covered / click-through ones) and what each paints
 //   ghost.tree(sel)        compact outline of a subtree (copy(ghost.tree(…)) to share)
+//   ghost.inspect($0)      ancestors of an element: readable vs hashed classes, hooks
 //   ghost.bg()             what the background code sees (image candidates, errors)
-//   ghost.check()          which user.css selectors match something on this page
-//   ghost.inspect($0)      ancestors of the selected element, with stable hooks
-//                          (readable classes, data-testid, aria-label…) vs hashed classes
+//   ghost.check()          how many elements each Ghost selector matches on this page
 //   ghost.rules("home")    search every selector in Spotify's loaded stylesheets
 //   ghost.classes("nav")   readable class names currently in the DOM
 
+// --- shared --------------------------------------------------------------------
+
 // Hashed class names look like "dqwQhIudKoD98eWJzj5E": long, no dashes, mixed case/digits.
 const isHashed = (c: string) => c.length >= 12 && !c.includes("-") && /[A-Z]/.test(c) && /[a-z0-9]/.test(c);
+
+function classesOf(el: Element) {
+  const all = Array.from(el.classList);
+  return { readable: all.filter((c) => !isHashed(c)), hashed: all.filter(isHashed) };
+}
+
+/** Stable hooks worth knowing about when writing a selector. */
+const HOOK_ATTRS = ["data-testid", "data-encore-id", "role", "aria-label", "aria-selected", "aria-current", "aria-expanded", "id", "href"];
+
+function hooksOf(el: Element, max = 40) {
+  return HOOK_ATTRS.filter((a) => el.hasAttribute(a)).map((a) => `[${a}="${(el.getAttribute(a) ?? "").slice(0, max)}"]`);
+}
+
+const inlineStyle = (el: Element, max: number) => (el.getAttribute("style") ?? "").slice(0, max);
 
 function* styleRules(rules: CSSRuleList): Generator<CSSStyleRule> {
   for (const rule of Array.from(rules)) {
@@ -48,13 +63,15 @@ function splitSelector(selector: string): string[] {
   return parts;
 }
 
-function ghostSheets(): CSSStyleSheet[] {
-  return Array.from(document.styleSheets).filter((s) => s.href?.endsWith("/user.css"));
-}
+// --- helpers -----------------------------------------------------------------------
 
 function check(onlyMissing = false) {
+  // pathname, not href: the remote loader adds ?v=<version>.
+  const ghostSheets = Array.from(document.styleSheets).filter(
+    (s) => s.href && new URL(s.href).pathname.endsWith("/user.css"),
+  );
   const rows: { selector: string; matches: number | string }[] = [];
-  for (const sheet of ghostSheets()) {
+  for (const sheet of ghostSheets) {
     for (const rule of sheetRules(sheet)) {
       for (const selector of splitSelector(rule.selectorText)) {
         // Pseudo-elements never match querySelectorAll; test the element they hang off.
@@ -77,16 +94,13 @@ function inspect(el?: Element | null) {
   if (!el) return console.warn("[ghost] pass an element, e.g. ghost.inspect($0)");
   const rows = [];
   for (let node: Element | null = el; node && node !== document.body; node = node.parentElement) {
-    const classes = Array.from(node.classList);
-    const attrs = ["data-testid", "data-encore-id", "aria-label", "role", "id"]
-      .filter((a) => node!.hasAttribute(a))
-      .map((a) => `${a}="${node!.getAttribute(a)}"`);
+    const { readable, hashed } = classesOf(node);
     rows.push({
       tag: node.tagName.toLowerCase(),
-      readable: classes.filter((c) => !isHashed(c)).join(" "),
-      hashed: classes.filter(isHashed).join(" "),
-      attributes: attrs.join(" "),
-      inlineStyle: node.getAttribute("style") ?? "",
+      readable: readable.join(" "),
+      hashed: hashed.join(" "),
+      hooks: hooksOf(node).join(" "),
+      inlineStyle: inlineStyle(node, 120),
     });
   }
   console.table(rows);
@@ -96,8 +110,7 @@ function describePaint(el: Element, pseudo?: string) {
   const cs = getComputedStyle(el, pseudo);
   const bgColor = cs.backgroundColor;
   const bgImage = cs.backgroundImage;
-  const paints =
-    (bgColor !== "rgba(0, 0, 0, 0)" && bgColor !== "transparent") || (bgImage !== "none" && bgImage !== "");
+  const paints = (bgColor !== "rgba(0, 0, 0, 0)" && bgColor !== "transparent") || (bgImage !== "none" && bgImage !== "");
   return { paints, bgColor, bgImage: bgImage.length > 90 ? `${bgImage.slice(0, 90)}…` : bgImage, opacity: cs.opacity };
 }
 
@@ -115,18 +128,17 @@ function allElementsAt(x: number, y: number): Element[] {
 }
 
 function stackAt(x: number, y: number) {
+  const stack = allElementsAt(x, y).filter((el) => el !== document.documentElement && el !== document.body);
   const rows = [];
-  const stack = allElementsAt(x, y);
   for (const el of stack) {
-    if (el === document.documentElement || el === document.body) continue;
-    const classes = Array.from(el.classList);
+    const { readable, hashed } = classesOf(el);
     const rect = el.getBoundingClientRect();
     const base = {
       tag: el.tagName.toLowerCase(),
-      readable: classes.filter((c) => !isHashed(c)).join(" "),
-      hashed: classes.filter(isHashed).join(" "),
+      readable: readable.join(" "),
+      hashed: hashed.join(" "),
       size: `${Math.round(rect.width)}×${Math.round(rect.height)}`,
-      inlineStyle: (el.getAttribute("style") ?? "").slice(0, 80),
+      inlineStyle: inlineStyle(el, 80),
     };
     for (const pseudo of [undefined, "::before", "::after"]) {
       const p = describePaint(el, pseudo);
@@ -135,8 +147,8 @@ function stackAt(x: number, y: number) {
     }
   }
   console.table(rows);
-  console.info("[ghost] top of the stack first. ● = paints a background. Elements are also in ghost.last.");
-  (window as any).ghost.last = stack;
+  console.info("[ghost] top of the stack first. ● = paints a background. Elements are in ghost.last.");
+  api.last = stack;
 }
 
 function pick() {
@@ -164,30 +176,29 @@ function rules(term: string) {
 
 function classes(term = "") {
   const all = new Set<string>();
-  document.querySelectorAll("[class]").forEach((n) => n.classList.forEach((c) => all.add(c)));
-  const list = [...all].filter((c) => !isHashed(c) && c.toLowerCase().includes(term.toLowerCase())).sort();
+  document.querySelectorAll("[class]").forEach((n) => classesOf(n).readable.forEach((c) => all.add(c)));
+  const list = [...all].filter((c) => c.toLowerCase().includes(term.toLowerCase())).sort();
   console.log(list.join("\n"));
   return list.length;
 }
 
-// Compact outline of a subtree: tag, readable classes, useful attributes. Repeated
-// siblings with the same shape are collapsed ("… ×12"). Returns the text so it
-// can be copied: copy(ghost.tree(".main-yourLibraryX-libraryRootlist")).
-const TREE_ATTRS = ["role", "aria-selected", "aria-current", "aria-expanded", "aria-label", "data-testid", "data-encore-id", "data-context-menu-open", "href"];
-
+// Compact outline of a subtree: tag, readable classes (+ hashed count), hooks and
+// inline style; beyond `maxChildren` siblings it prints "… +N more". Returns the
+// text so it can be copied: copy(ghost.tree(".main-yourLibraryX-libraryRootlist")).
 function tree(target: string | Element, depth = 6, maxChildren = 4): string {
   const root = typeof target === "string" ? document.querySelector(target) : target;
   if (!root) return `[ghost] nothing matches ${String(target)}`;
   const lines: string[] = [];
   const label = (el: Element) => {
-    const classes = Array.from(el.classList);
-    const readable = classes.filter((c) => !isHashed(c)).map((c) => `.${c}`).join("");
-    const hashed = classes.filter(isHashed).length;
-    const attrs = TREE_ATTRS.filter((a) => el.hasAttribute(a))
-      .map((a) => `[${a}="${(el.getAttribute(a) ?? "").slice(0, 40)}"]`)
-      .join("");
-    const style = el.getAttribute("style") ? `{${el.getAttribute("style")!.slice(0, 60)}}` : "";
-    return `${el.tagName.toLowerCase()}${readable}${hashed ? ` (+${hashed} hashed)` : ""}${attrs}${style}`;
+    const { readable, hashed } = classesOf(el);
+    const style = inlineStyle(el, 60);
+    return (
+      el.tagName.toLowerCase() +
+      readable.map((c) => `.${c}`).join("") +
+      (hashed.length ? ` (+${hashed.length} hashed)` : "") +
+      hooksOf(el).join("") +
+      (style ? `{${style}}` : "")
+    );
   };
   const walk = (el: Element, level: number) => {
     lines.push(`${"  ".repeat(level)}${label(el)}`);
@@ -209,7 +220,12 @@ async function bg() {
   return info;
 }
 
+// --- install ---------------------------------------------------------------------
+
+const api: Record<string, unknown> = { pick, tree, inspect, bg, check, rules, classes };
+
 export function installDevTools() {
-  (window as any).ghost = { pick, tree, check, inspect, rules, classes, bg };
-  console.info("[ghost] dev helpers ready: ghost.pick(), ghost.tree(sel), ghost.bg(), ghost.inspect($0), ghost.check(), ghost.rules(term), ghost.classes(term)");
+  (window as unknown as { ghost: typeof api }).ghost = api;
+  const names = Object.keys(api).map((n) => `ghost.${n}()`);
+  console.info(`[ghost] dev helpers ready: ${names.join(", ")}`);
 }

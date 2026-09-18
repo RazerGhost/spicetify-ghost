@@ -1,2 +1,3 @@
-/* Remote loader — see remote/theme.js */
-@import url("https://cdn.jsdelivr.net/gh/RazerGhost/spicetify-ghost@dist/user.css");
+/* Intentionally empty: Spicetify requires a user.css, but in the remote install
+   the stylesheet is loaded by theme.js with a version query (see remote/theme.js),
+   so updates aren't held back by the 7-day browser cache. */

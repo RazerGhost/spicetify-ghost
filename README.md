@@ -28,10 +28,12 @@ Everything is configurable from the ghost button in the top bar.
 iwr -useb https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/install.ps1 | iex
 ```
 
-This places two tiny loader files (plus `color.ini`) in `Spicetify\Themes\Ghost`,
-sets Ghost as the current theme and runs `spicetify apply`. The loaders fetch the theme
-from the `dist` branch via jsDelivr, so every push to `main` reaches you on the next
-Spotify start.
+This places a tiny loader (plus `color.ini`) in `Spicetify\Themes\Ghost`, sets Ghost
+as the current theme and runs `spicetify apply`. On each Spotify start the loader
+fetches a ~100-byte `version.json` from the `dist` branch (via jsDelivr, uncached) and
+loads `theme.js` / `user.css` for that version: unchanged → straight from the browser
+cache, new → downloaded. So every push to `main` reaches you on the next Spotify
+start, and offline starts use the last cached version.
 
 Pick a colour scheme (`dark`, `oled`) with `.\install.ps1 -Scheme oled`, or:
 
@@ -97,5 +99,5 @@ re-run of the installer (or `spicetify apply`); everything else updates remotely
 
 ## Release
 
-Push to `main`. The GitHub Action type-checks, builds, publishes `dist/` to the
-`dist` branch and purges the jsDelivr cache.
+Push to `main`. The GitHub Action type-checks, builds, writes `version.json` (the
+commit hash), publishes `dist/` to the `dist` branch and purges the jsDelivr cache.

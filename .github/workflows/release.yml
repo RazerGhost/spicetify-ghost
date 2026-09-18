@@ -27,6 +27,11 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
 
+      # The remote loader fetches this uncached and loads theme.js/user.css with
+      # ?v=<commit>, so browsers don't hold on to jsDelivr's 7-day cached copies.
+      - name: Write version.json
+        run: echo "{\"v\":\"${GITHUB_SHA}\"}" > dist/version.json
+
       - name: Publish to dist branch
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -39,5 +44,6 @@ jobs:
         uses: egad13/purge-jsdelivr-cache@v1
         with:
           url: |
+            https://cdn.jsdelivr.net/gh/${{ github.repository }}@dist/version.json
             https://cdn.jsdelivr.net/gh/${{ github.repository }}@dist/theme.js
             https://cdn.jsdelivr.net/gh/${{ github.repository }}@dist/user.css
