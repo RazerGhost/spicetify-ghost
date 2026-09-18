@@ -6,6 +6,7 @@
 // smooth without re-rendering React 60 times a second.
 
 import { useEffect, useMemo, useRef } from "react";
+import { useRomanized } from "./romanize";
 import type { Line, Lyrics, Vocal } from "./types";
 
 type Item =
@@ -58,6 +59,9 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
   const scroller = useRef<HTMLDivElement>(null);
   const items = useMemo(() => buildItems(lyrics), [lyrics]);
   const synced = lyrics.kind !== "static";
+  // Adds spans inside existing lines when ready; the frame loop below doesn't
+  // depend on it, so it keeps running undisturbed.
+  const romanized = useRomanized(lyrics);
 
   useEffect(() => {
     const root = scroller.current;
@@ -180,6 +184,7 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
             onClick={synced ? () => seek(item.start) : undefined}
           >
             <VocalText vocal={item.line} className="ghost-lyrics__main" />
+            {romanized?.has(item.line) && <span className="ghost-lyrics__roman">{romanized.get(item.line)}</span>}
             {item.line.background && <VocalText vocal={item.line.background} className="ghost-lyrics__bg" />}
           </div>
         ),

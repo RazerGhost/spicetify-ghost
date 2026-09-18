@@ -9,6 +9,8 @@ import { Progress } from "./FullscreenView";
 import { useCurrentTrack, useLyrics, usePlaying } from "./hooks";
 import { LyricsBody } from "./LyricsBody";
 
+const closeWindow = (e: { currentTarget: Element }) => e.currentTarget.ownerDocument.defaultView?.close();
+
 function useBackground() {
   const [image, setImage] = useState(currentBackground);
   useEffect(() => onBackgroundChange(setImage), []);
@@ -36,6 +38,11 @@ export function PipView() {
           <div className="ghost-pip__title">{track?.title}</div>
           <div className="ghost-pip__artist">{track?.artist}</div>
         </div>
+        {/* Always closeable from inside — the open/close buttons elsewhere can be
+            gone (e.g. the card hides for songs without lyrics). */}
+        <button className="ghost-round-button ghost-pip__close" onClick={closeWindow} title="Close" aria-label="Close">
+          <Icon name="close" />
+        </button>
       </header>
 
       <div className="ghost-pip__lyrics">

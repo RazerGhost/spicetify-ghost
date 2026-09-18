@@ -97,8 +97,20 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
 }
 
 .ghost-lyrics__main,
-.ghost-lyrics__bg {
+.ghost-lyrics__bg,
+.ghost-lyrics__roman {
   display: block;
+}
+
+/* Romanized line (romanize/): smaller, under the original. Plain colour, so
+   it follows the line's state (opacity) rather than the word fill. */
+.ghost-lyrics__roman {
+  margin-top: 0.15em;
+  font-size: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--spice-text);
+  opacity: 0.8;
 }
 
 /* Background vocals: smaller, under the main line. */

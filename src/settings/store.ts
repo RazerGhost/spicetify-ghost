@@ -38,6 +38,9 @@ export type Settings = {
   lyricsBlur: boolean;
   lyricsCard: boolean;
   replaceFullscreen: boolean;
+  romanize: boolean; // Korean built in
+  romanizeJapanese: boolean; // downloads ~17 MB once
+  romanizeChinese: boolean; // downloads ~320 KB once
   // Top bar & library
   navGlass: boolean;
   navAutoHide: boolean;
@@ -79,6 +82,9 @@ export const DEFAULTS: Settings = {
   lyricsBlur: true,
   lyricsCard: true,
   replaceFullscreen: true,
+  romanize: true,
+  romanizeJapanese: false,
+  romanizeChinese: false,
   navGlass: true,
   navAutoHide: false,
   slimRail: true,

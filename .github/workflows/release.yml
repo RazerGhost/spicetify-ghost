@@ -37,7 +37,10 @@ jobs:
 
       # The remote loader loads commit-pinned URLs (immutable, no purge needed);
       # this only refreshes the @dist fallback it uses before it knows a commit.
+      # jsDelivr throttles purges after several pushes in a row — that's
+      # harmless, so it mustn't fail the release.
       - name: Purge jsDelivr cache
+        continue-on-error: true
         uses: egad13/purge-jsdelivr-cache@v1
         with:
           url: |
