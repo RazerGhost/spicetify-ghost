@@ -140,18 +140,39 @@ function setAccent(hex: string | undefined) {
   }
 }
 
-async function artAccent(): Promise<string | undefined> {
+const readable = (hex: string | undefined) => {
+  const rgb = hexToRgb(hex ?? "");
+  return !!rgb && luminance(rgb) > 0.12 && luminance(rgb) < 0.85;
+};
+
+// Candidate colours from the album art, most vibrant first.
+// 1. Spicetify.colorExtractor — goes through CosmosAsync to spclient, which
+//    fails in current Spotify builds ("Resolver not found!").
+// 2. The GraphQL query Spotify's own UI uses (fetchExtractedColors, exposed by
+//    Spicetify in GraphQL.Definitions) for the cover image.
+async function artColors(): Promise<string[]> {
   const uri = Spicetify.Player.data?.item?.uri;
-  if (!uri) return undefined;
+  if (!uri) return [];
   try {
-    const colors = await Spicetify.colorExtractor(uri);
-    return [colors.VIBRANT_NON_ALARMING, colors.VIBRANT, colors.LIGHT_VIBRANT, colors.PROMINENT].find((hex) => {
-      const rgb = hexToRgb(hex ?? "");
-      return rgb && luminance(rgb) > 0.12 && luminance(rgb) < 0.85;
-    });
+    const c = await Spicetify.colorExtractor(uri);
+    if (c) return [c.VIBRANT_NON_ALARMING, c.VIBRANT, c.LIGHT_VIBRANT, c.PROMINENT];
   } catch {
-    return undefined;
+    // fall through to GraphQL
   }
+  const image = albumArt();
+  const query = (Spicetify.GraphQL as any)?.Definitions?.fetchExtractedColors;
+  if (!image || !query) return [];
+  try {
+    const res = await Spicetify.GraphQL.Request(query, { imageUris: [image] });
+    const colors = res?.data?.extractedColors?.[0];
+    return colors ? [colors.colorRaw?.hex, colors.colorLight?.hex, colors.colorDark?.hex] : [];
+  } catch {
+    return [];
+  }
+}
+
+async function artAccent(): Promise<string | undefined> {
+  return (await artColors()).find(readable);
 }
 
 async function updateAccent() {

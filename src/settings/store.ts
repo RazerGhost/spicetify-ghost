@@ -37,7 +37,7 @@ export type Settings = {
   lyricsSize: number; // px
   lyricsBlur: boolean;
   lyricsCard: boolean;
-  fullscreenButton: boolean;
+  replaceFullscreen: boolean;
   // Top bar & library
   navGlass: boolean;
   navAutoHide: boolean;
@@ -77,7 +77,7 @@ export const DEFAULTS: Settings = {
   lyricsSize: 36,
   lyricsBlur: true,
   lyricsCard: true,
-  fullscreenButton: true,
+  replaceFullscreen: true,
   navGlass: true,
   navAutoHide: false,
   slimRail: true,
@@ -129,6 +129,7 @@ export function subscribe(listener: () => void) {
 // tint is applied, because a CSS variable can't be mixed with its own old value.
 const TINTED = ["main", "main-elevated", "highlight", "highlight-elevated", "sidebar", "player", "card", "subtext"];
 let baseCaptured = false;
+const appliedVars: Record<string, string> = {};
 
 // Returns false if colors.css isn't readable — then tinting stays off, because
 // color-mix() with an empty variable would invalidate every surface colour.
@@ -162,7 +163,12 @@ export function applySettings() {
     "--ghost-lyrics-size": `${s.lyricsSize}px`,
     "--ghost-lyrics-blur": s.lyricsBlur ? "0.8px" : "0px",
   };
-  for (const [name, value] of Object.entries(vars)) root.style.setProperty(name, value);
+  // Only write what changed: each write to <html> restyles the whole app.
+  for (const [name, value] of Object.entries(vars)) {
+    if (appliedVars[name] === value) continue;
+    appliedVars[name] = value;
+    root.style.setProperty(name, value);
+  }
 
   root.classList.toggle("ghost-tinted", baseCaptured && s.tint > 0);
   root.classList.toggle("ghost-banner-hide", s.bannerMode === "hide");

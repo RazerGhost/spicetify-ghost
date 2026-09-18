@@ -5,6 +5,7 @@ import { addTopbarButton } from "./topbar";
 import { initWindowControls } from "./windowControls";
 import { initVolume } from "./volume";
 import { initLyrics } from "./lyrics";
+import { initSidebarState } from "./sidebar";
 
 export function start() {
   document.documentElement.classList.add("ghost");
@@ -13,6 +14,7 @@ export function start() {
   initWindowControls();
   initVolume();
   initLyrics();
+  initSidebarState();
 
   addTopbarButton("Ghost settings", () =>
     Spicetify.PopupModal.display({ title: "Ghost", content: <SettingsPanel />, isLarge: true }),

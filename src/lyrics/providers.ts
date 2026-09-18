@@ -3,11 +3,12 @@
 // No third-party service receives any Spotify token: Spotify's endpoint goes
 // through Spicetify.CosmosAsync (Spotify's own auth), the others are public.
 
+import { albumArt } from "../background";
 import { parseLRC, parseTTML, staticLyrics } from "./parse";
 import type { Line, Lyrics, TrackInfo } from "./types";
 
 const AMLL = "https://raw.githubusercontent.com/amll-dev/amll-ttml-db/main/spotify-lyrics";
-const SPOTIFY = "https://spclient.wg.spotify.com/color-lyrics/v2/track";
+const SPOTIFY = "https://spclient.wg.spotify.com/color-lyrics/v2";
 const LRCLIB = "https://lrclib.net/api";
 const LRCLIB_HEADERS = { "Lrclib-Client": "Ghost (https://github.com/RazerGhost/spicetify-ghost)" };
 
@@ -18,11 +19,33 @@ async function fromAmll(track: TrackInfo): Promise<Lyrics | null> {
   return parseTTML(await res.text());
 }
 
+// Same request Spotify's own lyrics page makes (xpui-modules.js): through its
+// RequestBuilder, with the cover image in the path. Spicetify.CosmosAsync can't
+// route https://spclient URLs in current builds ("Resolver not found!"), so
+// that's only a fallback for older ones.
+async function requestSpotifyLyrics(track: TrackInfo): Promise<any> {
+  const builder = (Spicetify.Platform as any)?.RequestBuilder;
+  if (builder?.build) {
+    try {
+      const res = await builder
+        .build()
+        .withHost(SPOTIFY)
+        .withPath(`/track/${encodeURIComponent(track.id!)}/image/${encodeURIComponent(track.image ?? "")}`)
+        .withQueryParameters({ format: "json", vocalRemoval: false })
+        .withEndpointIdentifier("/track/{trackId}")
+        .send();
+      return res?.body;
+    } catch (err: any) {
+      if (err?.status === 404) return null; // no lyrics for this track
+      throw err;
+    }
+  }
+  return Spicetify.CosmosAsync.get(`${SPOTIFY}/track/${track.id}?format=json&vocalRemoval=false&market=from_token`);
+}
+
 async function fromSpotify(track: TrackInfo): Promise<Lyrics | null> {
   if (!track.id) return null;
-  const body = await Spicetify.CosmosAsync.get(
-    `${SPOTIFY}/${track.id}?format=json&vocalRemoval=false&market=from_token`,
-  );
+  const body = await requestSpotifyLyrics(track);
   const lyrics = body?.lyrics;
   if (!lyrics?.lines?.length) return null;
 
@@ -116,5 +139,6 @@ export function currentTrack(): TrackInfo | null {
     artist: item.artists?.[0]?.name ?? meta.artist_name ?? "",
     album: item.album?.name ?? meta.album_title ?? "",
     duration: (item.duration?.milliseconds ?? Number(meta.duration) ?? 0) / 1000,
+    image: albumArt(),
   };
 }

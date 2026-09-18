@@ -5,6 +5,7 @@
 // Re-attaches when Spotify re-renders the player bar.
 
 import { getSettings, subscribe } from "./settings/store";
+import { onDomChange } from "./watch";
 
 const BAR = ".main-nowPlayingBar-volumeBar";
 
@@ -114,11 +115,11 @@ export function initVolume() {
 
   // The player bar can be re-rendered (mini player, fullscreen, layout changes);
   // re-attach when the bar we're on is gone, or our label disappeared.
-  new MutationObserver(() => {
+  onDomChange(() => {
     const barGone = wheelTarget !== null && !wheelTarget.isConnected;
     const labelGone = getSettings().showVolume && !label.isConnected;
     if (barGone || labelGone || wheelTarget === null) sync();
-  }).observe(document.body, { childList: true, subtree: true });
+  });
 
   sync();
 }

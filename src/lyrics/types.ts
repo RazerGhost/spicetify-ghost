@@ -41,4 +41,6 @@ export type TrackInfo = {
   album: string;
   /** Seconds. */
   duration: number;
+  /** Cover image URL — Spotify's lyrics endpoint wants it in the path. */
+  image?: string;
 };

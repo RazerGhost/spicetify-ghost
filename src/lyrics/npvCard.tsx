@@ -1,10 +1,12 @@
 // Compact lyrics card in the now-playing view (right sidebar), placed right after
 // the cover/canvas block (.main-nowPlayingView-nowPlayingWidget inside
 // .main-nowPlayingView-panel, a.k.a. data-testid="NPV_Panel_OpenDiv").
-// Hidden when the song has no lyrics. Click the header to open the full page.
+// Hidden when the song has no lyrics, and while the full lyrics page is open.
+// Click the header to open the full page.
 
 import { mount } from "../react";
 import { getSettings, subscribe } from "../settings/store";
+import { onDomChange } from "../watch";
 import { openFullscreen } from "./fullscreen";
 import { useCurrentTrack, useLyrics } from "./hooks";
 import { LyricsView } from "./LyricsView";
@@ -33,6 +35,7 @@ function LyricsCard() {
 }
 
 export function initLyricsCard() {
+  const history = (Spicetify.Platform as any).History;
   const host = document.createElement("div");
   host.className = "ghost-lyrics-card-host";
   let unmount: (() => void) | null = null;
@@ -40,7 +43,8 @@ export function initLyricsCard() {
   const place = () => {
     const s = getSettings();
     const widget = document.querySelector(WIDGET);
-    if (!s.lyricsPage || !s.lyricsCard || !widget) {
+    const onLyricsPage = history.location.pathname === "/lyrics";
+    if (!s.lyricsPage || !s.lyricsCard || !widget || onLyricsPage) {
       unmount?.();
       unmount = null;
       host.remove();
@@ -51,17 +55,9 @@ export function initLyricsCard() {
     if (!unmount) unmount = mount(<LyricsCard />, host);
   };
 
-  // The now-playing view opens, closes and re-renders; re-place at most once per frame.
-  let queued = false;
-  new MutationObserver(() => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
-      place();
-    });
-  }).observe(document.body, { childList: true, subtree: true });
-
+  // The now-playing view opens, closes and re-renders.
+  onDomChange(place);
+  history.listen(place);
   subscribe(place);
   place();
 }

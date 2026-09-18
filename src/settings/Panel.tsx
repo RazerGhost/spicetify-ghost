@@ -92,11 +92,11 @@ const SECTIONS: { title: string; controls: ControlDef[] }[] = [
   {
     title: "Lyrics",
     controls: [
-      { kind: "toggle", key: "lyricsPage", label: "Ghost Lyrics", hint: "Replaces Spotify's lyrics page (the lyrics button in the player bar)." },
+      { kind: "toggle", key: "lyricsPage", label: "Replace Spotify's lyrics page", hint: "The lyrics button in the player bar opens these synced lyrics instead of Spotify's." },
       { kind: "slider", key: "lyricsSize", label: "Text size", min: 20, max: 64, unit: "px", when: (s) => s.lyricsPage },
       { kind: "toggle", key: "lyricsBlur", label: "Blur distant lines", when: (s) => s.lyricsPage },
       { kind: "toggle", key: "lyricsCard", label: "Lyrics card in now-playing view", when: (s) => s.lyricsPage },
-      { kind: "toggle", key: "fullscreenButton", label: "Fullscreen button in player bar", hint: "Opens the Ghost fullscreen view. Esc to exit.", when: (s) => s.lyricsPage },
+      { kind: "toggle", key: "replaceFullscreen", label: "Replace Spotify's fullscreen", hint: "The fullscreen button opens the lyrics fullscreen view instead of Spotify's. Esc to exit.", when: (s) => s.lyricsPage },
     ],
   },
   {

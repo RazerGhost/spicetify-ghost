@@ -615,6 +615,34 @@ html.ghost-library-autohide .Root__nav-bar:is(:hover, :focus-within) {
   opacity: 1;
 }
 
+/* --- Carousels (Home shelves, search, …) -----------------------------------
+   Spotify's carousel (xpui-modules.js) bleeds past the content column into the
+   panel padding (negative --margin-start / --margin-end on the root) and hides
+   the overflow with ::before/::after overlays painted in solid --spice-main —
+   invisible or dark bands on glass. Instead: drop the overlays and mask the
+   scrolling viewport (.search-searchCategory-categoryGrid, where Spotify's own
+   "mask" edge mode goes) so cards stop at the content column with a short fade.
+   The ‹ › buttons (.search-searchCategory-carousel) are a sibling, so they stay. */
+html.ghost .search-searchCategory-contentArea {
+  --ghost-bleed-start: max(0px, calc(-1 * var(--margin-start, 0px)));
+  --ghost-bleed-end: max(0px, calc(-1 * var(--margin-end, 0px)));
+}
+
+html.ghost .search-searchCategory-contentArea::before,
+html.ghost .search-searchCategory-contentArea::after {
+  display: none;
+}
+
+html.ghost .search-searchCategory-categoryGrid {
+  mask-image: linear-gradient(
+    to right,
+    transparent calc(var(--ghost-bleed-start) - 20px),
+    #000 var(--ghost-bleed-start),
+    #000 calc(100% - var(--ghost-bleed-end)),
+    transparent calc(100% - var(--ghost-bleed-end) + 20px)
+  );
+}
+
 /* --- Ghost Lyrics (src/lyrics) ---------------------------------------------
    Mounted over .Root__main-view on /lyrics; Spotify's own lyrics view stays
    mounted underneath but hidden. Per-frame state comes from LyricsView.tsx as
@@ -626,8 +654,17 @@ html.ghost-library-autohide .Root__nav-bar:is(:hover, :focus-within) {
   --ghost-lyrics-blur: 0.8px;
 }
 
+/* content-visibility (not just visibility) so Spotify's hidden lyrics view
+   underneath isn't laid out or painted while ours covers it. */
 html.ghost-lyrics-open .Root__main-view .main-view-container {
   visibility: hidden;
+  content-visibility: hidden;
+}
+
+/* Spotify hard-codes the lyrics button to inactive; show it as active (accent)
+   while our lyrics page is open — clicking it then goes back (buttons.ts). */
+html.ghost-lyrics-open [data-testid="lyrics-button"] {
+  color: var(--spice-button) !important;
 }
 
 #ghost-lyrics-host {
@@ -840,8 +877,14 @@ html.ghost-lyrics-open .Root__main-view .main-view-container {
 /* --- Fullscreen (src/lyrics/FullscreenView.tsx) ---------------------------
    .Root is hidden, so #ghost-bg (the album-art background) is what's behind. */
 
+/* content-visibility, not just visibility: descendants can override
+   visibility:hidden with visibility:visible — Spotify's canvas video (moved into
+   the now-playing view from #video-player-parking-surface) did, and showed on
+   top of fullscreen. content-visibility:hidden skips rendering the whole subtree,
+   which also means Spotify's UI costs nothing while fullscreen is open. */
 html.ghost-fullscreen .Root {
   visibility: hidden;
+  content-visibility: hidden;
 }
 
 #ghost-fs-host {
@@ -1223,17 +1266,14 @@ html.ghost-fade-edges .main-view-container__scroll-node {
   mask-image: linear-gradient(transparent, #000 24px, #000 calc(100% - 48px), transparent);
 }
 
-/* Closed right sidebar leaves a 40px "peek" strip (Root__right-sidebar-peek,
-   without -expanded). Hide it; its grid column collapses to 0 but the grid gap
-   stays, so pull the main view over it. */
-html.ghost-hide-collapsed-sidebar
-  .Root__right-sidebar:has(.Root__right-sidebar-peek:not(.Root__right-sidebar-expanded)) {
+/* Closed right sidebar leaves a 40px "peek" strip. Hide it; its grid column
+   collapses to 0 but the grid gap stays, so pull the main view over it.
+   .ghost-sidebar-collapsed is set by sidebar.ts (a :has() here was expensive). */
+html.ghost-hide-collapsed-sidebar.ghost-sidebar-collapsed .Root__right-sidebar {
   display: none !important;
 }
 
-html.ghost-hide-collapsed-sidebar
-  .Root__top-container:has(.Root__right-sidebar-peek:not(.Root__right-sidebar-expanded))
-  .Root__main-view {
+html.ghost-hide-collapsed-sidebar.ghost-sidebar-collapsed .Root__main-view {
   margin-inline-end: calc(var(--panel-gap) * -1);
 }
 
@@ -1247,6 +1287,28 @@ html.ghost-hide-collapsed-sidebar
 }
 
 /* --- Accent ------------------------------------------------------------- */
+
+/* Spicetify maps the base colour of Spotify's green "bright accent" and
+   "positive" sets (play buttons, added/liked checks) to --spice-button-active,
+   but hover/press are hard-coded greens (#3be477 / #1abc54) in xpui-snapshot.css.
+   Derive them from the accent instead. Red/orange/blue sets are semantic
+   (errors, warnings, announcements) and stay as they are. */
+html.ghost :is(.encore-bright-accent-set, .encore-positive-set) {
+  --ghost-accent-hover: color-mix(in oklab, var(--spice-button-active), white 15%);
+  --ghost-accent-press: color-mix(in oklab, var(--spice-button-active), black 15%);
+  --background-highlight: var(--ghost-accent-hover);
+  --background-press: var(--ghost-accent-press);
+  --background-elevated-base: var(--ghost-accent-hover);
+  --background-elevated-highlight: var(--ghost-accent-hover);
+  --background-elevated-press: var(--ghost-accent-press);
+  --decorative-subdued: var(--ghost-accent-press);
+}
+
+/* Inverted (white) sets carry dark greens for accent text/icons. */
+html.ghost :is(.encore-inverted-set, .encore-inverted-light-set) {
+  --text-bright-accent: color-mix(in oklab, var(--spice-button-active), black 35%);
+  --essential-bright-accent: color-mix(in oklab, var(--spice-button-active), black 20%);
+}
 
 html.ghost ::selection {
   background: rgba(var(--spice-rgb-button), 0.35);
