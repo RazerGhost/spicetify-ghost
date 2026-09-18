@@ -1,0 +1,18 @@
+{
+  "name": "spicetify-ghost",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ghost — a lightweight glassy Spicetify theme",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --dev",
+    "typecheck": "tsc --noEmit",
+    "check": "node scripts/check-selectors.mjs"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}

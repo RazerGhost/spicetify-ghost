@@ -1,0 +1,43 @@
+name: Build & publish
+
+# On every push to main: build, publish dist/ to the `dist` branch (what the
+# remote loaders point at), then purge jsDelivr so clients get it within minutes
+# instead of waiting ~12h for the CDN cache to expire.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Publish to dist branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: dist
+          publish_dir: ./dist
+          force_orphan: true
+
+      - name: Purge jsDelivr cache
+        uses: egad13/purge-jsdelivr-cache@v1
+        with:
+          url: |
+            https://cdn.jsdelivr.net/gh/${{ github.repository }}@dist/theme.js
+            https://cdn.jsdelivr.net/gh/${{ github.repository }}@dist/user.css

@@ -1,0 +1,981 @@
+/* ==========================================================================
+   Ghost — lightweight glassy Spicetify theme
+   Tunables below are overwritten at runtime by the settings panel
+   (inline style on <html>), so these are just the no-JS fallbacks.
+   ========================================================================== */
+
+:root {
+  --ghost-blur: 48px;
+  --ghost-brightness: 0.45;
+  --ghost-saturation: 1.4;
+  --ghost-contrast: 1;
+  --ghost-bg-color: var(--spice-main);
+  --ghost-panel-alpha: 0.35;
+  --ghost-border-alpha: 0.06;
+  --ghost-radius: 12px;
+  --ghost-gap: 8px;
+  --ghost-fade: 900ms; /* replaced by Spotify's crossfade time when that's on */
+
+  --ghost-tint: 0%;
+  --ghost-banner-blur: 0px;
+  --ghost-player-width: 100%;
+  --ghost-player-height: 72px;
+
+  /* Relative colour syntax (not --spice-rgb-*) so these follow the accent tint. */
+  --ghost-panel: rgb(from var(--spice-main) r g b / var(--ghost-panel-alpha));
+  --ghost-border: rgba(var(--spice-rgb-text), var(--ghost-border-alpha));
+  --ghost-sticky: rgb(from var(--spice-main) r g b / 0.6);
+}
+
+/* Accent tint — a lightweight take on Lucid's Material-You palette. Instead of
+   generating tonal palettes in JS, mix the accent (which follows the album art)
+   into the base surfaces with color-mix(). --ghost-base-* hold the original
+   color.ini values (copied by store.ts), since a variable can't mix with itself.
+   Spotify's --background-* / --text-subdued all derive from these. */
+html.ghost-tinted {
+  --spice-main: color-mix(in oklab, var(--ghost-base-main), var(--spice-button) var(--ghost-tint));
+  --spice-main-elevated: color-mix(in oklab, var(--ghost-base-main-elevated), var(--spice-button) var(--ghost-tint));
+  --spice-highlight: color-mix(in oklab, var(--ghost-base-highlight), var(--spice-button) var(--ghost-tint));
+  --spice-highlight-elevated: color-mix(in oklab, var(--ghost-base-highlight-elevated), var(--spice-button) var(--ghost-tint));
+  --spice-sidebar: color-mix(in oklab, var(--ghost-base-sidebar), var(--spice-button) var(--ghost-tint));
+  --spice-player: color-mix(in oklab, var(--ghost-base-player), var(--spice-button) var(--ghost-tint));
+  --spice-card: color-mix(in oklab, var(--ghost-base-card), var(--spice-button) var(--ghost-tint));
+  --spice-subtext: color-mix(in oklab, var(--ghost-base-subtext), var(--spice-button) calc(var(--ghost-tint) * 1.5));
+}
+
+/* Spotify's own gap between panels — set inline on .Root, hence !important. */
+html.ghost .Root {
+  --panel-gap: var(--ghost-gap) !important;
+}
+
+/* --- Background ----------------------------------------------------------
+   #ghost-bg is injected by theme.js as the first child of <body>. It sits
+   behind everything (z-index -1); the app's panels are made translucent so
+   the blurred art shows through. No backdrop-filter needed — the art is
+   already blurred, which keeps this cheap on the GPU. */
+
+html,
+body {
+  background: var(--spice-main) !important;
+}
+
+#ghost-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--ghost-bg-color);
+}
+
+.ghost-bg__layer {
+  position: absolute;
+  inset: calc(var(--ghost-blur) * -2); /* hide the blur's soft edges */
+  opacity: 0;
+  transition: opacity var(--ghost-fade) ease;
+  filter: blur(var(--ghost-blur)) brightness(var(--ghost-brightness)) saturate(var(--ghost-saturation))
+    contrast(var(--ghost-contrast));
+  will-change: opacity;
+}
+
+/* Solid-colour mode: no image layers at all. */
+html.ghost-bg-solid .ghost-bg__layer {
+  display: none;
+}
+
+.ghost-bg__layer.ghost-active {
+  opacity: 1;
+}
+
+.ghost-bg__layer,
+.ghost-bg__layer::before,
+.ghost-bg__layer::after {
+  background: var(--ghost-art, none) center / cover no-repeat;
+}
+
+/* Animated mode: two extra rotated copies drift over the base image
+   (a CSS-only take on Lucid's WebGL shader). */
+.ghost-bg__layer::before,
+.ghost-bg__layer::after {
+  content: "";
+  position: absolute;
+  width: 75%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: none;
+}
+
+.ghost-bg__layer::before {
+  top: -10%;
+  left: -10%;
+}
+
+.ghost-bg__layer::after {
+  bottom: -10%;
+  right: -10%;
+  animation-direction: reverse;
+}
+
+html.ghost-animated .ghost-bg__layer::before,
+html.ghost-animated .ghost-bg__layer::after {
+  display: block;
+  animation: ghost-spin 60s linear infinite;
+}
+
+html.ghost-animated .ghost-bg__layer.ghost-active {
+  animation: ghost-spin 120s linear infinite;
+}
+
+@keyframes ghost-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ghost-animated .ghost-bg__layer,
+  html.ghost-animated .ghost-bg__layer::before,
+  html.ghost-animated .ghost-bg__layer::after {
+    animation: none;
+  }
+}
+
+/* Film grain: a tiny SVG noise tile over the background only. */
+html.ghost-grain #ghost-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- Panels ------------------------------------------------------------- */
+
+html.ghost body,
+html.ghost .Root,
+html.ghost .Root__top-container {
+  background: transparent !important;
+}
+
+/* Outer chrome (top nav, now-playing bar) floats directly on the art. */
+html.ghost .Root__globalNav,
+html.ghost .Root__now-playing-bar {
+  background-color: transparent !important;
+}
+
+/* The three main panels become translucent glass. */
+html.ghost .Root__nav-bar,
+html.ghost .Root__main-view,
+html.ghost .Root__right-sidebar > *,
+html.ghost .Root__right-sidebar-peek {
+  background-color: var(--ghost-panel) !important;
+  border-radius: var(--ghost-radius) !important;
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  overflow: hidden;
+}
+
+/* Inside panels, Spotify paints --background-base again; let the panel show. */
+html.ghost .Root__nav-bar,
+html.ghost .Root__main-view,
+html.ghost .Root__right-sidebar {
+  --background-base: transparent;
+}
+
+/* Page-colour tinting. Spotify tints surfaces by setting --background-base inline
+   to the page's extracted colour (top bar, home filter-chips bar, entity header,
+   now-playing view). Matching the inline style keeps working when class hashes
+   change. Sticky bars (they fade in on scroll) get neutral glass instead of colour. */
+html.ghost .Root__main-view [style*="--background-base"]:not([style*="--background-base: transparent"]) {
+  --background-base: var(--ghost-sticky) !important;
+}
+
+html.ghost .NowPlayingView[style*="--background-base"] {
+  --background-base: transparent !important;
+}
+
+html.ghost .main-topBar-background {
+  border-radius: var(--ghost-radius) var(--ghost-radius) 0 0 !important;
+}
+
+/* Extra 60% black layer over the top bar. */
+html.ghost .main-topBar-overlay {
+  display: none;
+}
+
+/* Playlist/artist/album header: colour block + gradient from
+   --background-base-min-contrast (the grey/orange wash). */
+html.ghost .main-entityHeader-backgroundColor {
+  display: none;
+}
+
+/* Page-colour washes. Besides --background-base, Spotify paints the page colour
+   through *empty* decorative divs with an inline background-color (+ gradient/noise):
+   the Home header, the header of artists without a banner, and the action-bar
+   background behind play/follow (all hashed classes, found with ghost.pick()).
+   One structural rule covers them all. background:none rather than display:none,
+   so nothing in the layout can shift. */
+html.ghost .Root__main-view [style*="background-color"]:empty {
+  background: none !important;
+}
+
+/* The banner-less artist header also has an empty gradient/noise layer next to
+   its colour block, without an inline colour of its own. */
+html.ghost .main-entityHeader-container > [style*="background-color"] ~ :empty {
+  display: none;
+}
+
+/* Gradient behind the play/follow action bar. */
+html.ghost .playlist-playlist-actionBarBackground-background {
+  background: none !important;
+}
+
+/* Artist banner. Spotify renders it into .before-scroll-node, *behind* the
+   scrolling content, relying on that content being opaque to cover it — with
+   glass panels it would show through while scrolling. Instead, fade it out as the
+   main view scrolls, with a CSS scroll-driven animation (no JS). The scroller is
+   OverlayScrollbars' viewport — Spotify uses the same hook for its own
+   scroll timelines (--npv-scroll). timeline-scope lets the sibling see it. */
+html.ghost .main-view-container {
+  timeline-scope: --ghost-main-scroll;
+}
+
+html.ghost .main-view-container__scroll-node[data-overlayscrollbars-viewport],
+html.ghost .main-view-container__scroll-node > [data-overlayscrollbars-viewport] {
+  scroll-timeline: --ghost-main-scroll block;
+}
+
+html.ghost .before-scroll-node {
+  filter: blur(var(--ghost-banner-blur));
+  animation: ghost-banner-fade linear both;
+  animation-timeline: --ghost-main-scroll;
+  animation-range: 0 360px;
+}
+
+/* The banner (image layer + colour-overlay layer, both hashed classes, portalled
+   as .before-scroll-node > div > div) is taller than the header. Its bottom used
+   to be hidden by the action-bar gradient we removed, leaving a hard-edged strip.
+   Fade both layers out towards the bottom instead. Masked on the painted layers,
+   not the wrapper, so a zero-height wrapper can't mask everything away. */
+html.ghost .before-scroll-node > * > * {
+  mask-image: linear-gradient(#000 45%, transparent 100%);
+}
+
+@keyframes ghost-banner-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+html.ghost-banner-hide .before-scroll-node {
+  display: none;
+}
+
+/* --- Now-playing view (right sidebar) --------------------------------------
+   Its overlays hard-code Spotify's old #121212 (rgba(18,18,18,…)) instead of a
+   theme variable, so they show up as dark blocks on the glass panel. */
+
+/* Over the canvas/cover: keep only a light top fade for the header text; drop
+   the dark band Spotify adds at the bottom. */
+html.ghost .main-nowPlayingView-canvasVisualEnhancement::before {
+  background: linear-gradient(rgba(0, 0, 0, 0.45), transparent 30%) !important;
+}
+
+html.ghost .main-nowPlayingView-canvasVisualEnhancement::after {
+  background: none !important;
+}
+
+/* With the dark band gone, a canvas (looping video) ends in a hard edge across
+   the panel. Fade the <video> itself out into the glass. Masking a container
+   instead hid the video entirely — it's positioned outside its container's box. */
+html.ghost .NowPlayingView video {
+  mask-image: linear-gradient(#000 55%, transparent 100%);
+}
+
+/* Dark block behind the track title ("Midnight"). */
+html.ghost .main-nowPlayingView-contextItemInfo::before {
+  background: none !important;
+}
+
+/* --- Player bar ----------------------------------------------------------- */
+
+html.ghost .main-nowPlayingBar-container {
+  width: var(--ghost-player-width);
+  margin-inline: auto;
+  transition: width 0.2s ease;
+}
+
+html.ghost .main-nowPlayingBar-nowPlayingBar {
+  height: var(--ghost-player-height);
+}
+
+/* Volume percentage (volume.ts). Fixed width + tabular digits so the slider
+   doesn't jump around while the number changes. */
+.ghost-volume {
+  min-width: 4ch;
+  padding-inline-start: 8px;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: var(--spice-subtext);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.ghost-volume:hover,
+.ghost-volume:focus-visible {
+  color: var(--spice-text);
+  outline: none;
+}
+
+.ghost-volume__input {
+  width: 4.5ch;
+  padding: 0 2px;
+  border: 1px solid var(--spice-button);
+  border-radius: 4px;
+  background: rgba(var(--spice-rgb-text), 0.08);
+  color: var(--spice-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  appearance: textfield;
+}
+
+.ghost-volume__input::-webkit-inner-spin-button,
+.ghost-volume__input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* Floating: the bar becomes a glass card like the other panels. */
+html.ghost-player-floating .main-nowPlayingBar-container {
+  background-color: var(--ghost-panel);
+  border-radius: var(--ghost-radius);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  padding-inline: 8px;
+}
+
+/* --- Top bar ---------------------------------------------------------------
+   Spotify: .Root__globalNav has padding = gap and margin = -gap, so it bleeds to
+   the window edges. Glass mode turns it into a regular panel instead. */
+
+html.ghost.ghost-nav-glass .Root__globalNav,
+html.ghost.ghost-nav-autohide .Root__globalNav {
+  background-color: var(--ghost-panel) !important;
+  border-radius: var(--ghost-radius);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  margin: 0 !important;
+  padding: 0 4px !important;
+  height: 52px !important;
+}
+
+/* Windows' native min/max/close buttons sit over the top-right corner. Spotify
+   reserves 135px for them with .main-globalNav-contentRightSpacer (and pulls the
+   right-hand content under them with a negative margin). In glass mode the pill
+   stops before them instead; windowControls.ts matches their height to the bar. */
+html.ghost.ghost-nav-glass .Root__globalNav {
+  margin-inline-end: calc(135px / (var(--zoom-level, 100) / 100)) !important;
+}
+
+html.ghost.ghost-nav-glass .main-globalNav-contentRightSpacer {
+  display: none;
+}
+
+html.ghost.ghost-nav-glass .main-globalNav-contentRight {
+  margin-inline-end: 0 !important;
+}
+
+/* Window buttons hidden (windowControls.ts): nothing to make room for on the
+   right, so the pill runs the full width and the reserved space goes. */
+html.ghost.ghost-no-window-buttons .Root__globalNav {
+  margin-inline-end: 0 !important;
+}
+
+html.ghost.ghost-no-window-buttons .main-globalNav-contentRightSpacer {
+  display: none;
+}
+
+/* The same switch also hides the native ⋯ menu, so drop its placeholder (and
+   the glass circle drawn on it) too. */
+html.ghost.ghost-no-window-buttons .main-globalNav-historyButtonsSpacer {
+  display: none;
+}
+
+html.ghost.ghost-no-window-buttons .main-globalNav-contentRight {
+  margin-inline-end: 0 !important;
+}
+
+/* One style for every round icon button in the bar: history arrows, home,
+   custom-app links (cart, ghost), friends, bell. The avatar (has an <img>) and
+   Spicetify's hidden placeholder button are left alone. */
+html.ghost .Root__globalNav
+  :is(
+    .main-globalNav-link-icon,
+    .main-globalNav-buddyFeed,
+    .main-globalNav-historyButtons button:not([hidden]),
+    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
+  ) {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  background-color: rgba(var(--spice-rgb-text), 0.08) !important;
+  color: var(--spice-subtext);
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+html.ghost .Root__globalNav
+  :is(
+    .main-globalNav-link-icon,
+    .main-globalNav-buddyFeed,
+    .main-globalNav-historyButtons button:not([hidden]),
+    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
+  ):not(:disabled):hover {
+  background-color: color-mix(in oklab, var(--spice-button) 30%, transparent) !important;
+  color: var(--spice-text);
+}
+
+/* On Windows the ⋯ app menu is *native*, like min/max/close — not in the DOM.
+   Spotify only reserves room for it with .main-globalNav-historyButtonsSpacer,
+   which the native button is drawn over. Paint the same round glass circle on
+   that spacer so it sits behind the native dots. (No hover: the native button
+   gets the mouse, not the page.) */
+html.ghost .main-globalNav-historyButtonsSpacer {
+  position: relative;
+}
+
+html.ghost .main-globalNav-historyButtonsSpacer::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background-color: rgba(var(--spice-rgb-text), 0.08);
+  pointer-events: none;
+}
+
+/* The buttons are now 36px, but their wrappers keep Spotify's 48px height and
+   don't centre (e.g. home next to the search field). Centre them. */
+html.ghost .main-globalNav-searchContainer,
+html.ghost .Root__globalNav :has(> .main-globalNav-link-icon) {
+  align-items: center;
+}
+
+html.ghost .Root__globalNav :has(> .main-globalNav-link-icon):not(.main-globalNav-searchContainer) {
+  display: flex;
+}
+
+/* Same icon size in every round button — Spicetify renders custom-app icons
+   (cart) at 24px, Spotify's own at 16px. */
+html.ghost .Root__globalNav
+  :is(
+    .main-globalNav-link-icon,
+    .main-globalNav-buddyFeed,
+    .main-globalNav-historyButtons button:not([hidden]),
+    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
+  )
+  svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Even spacing on the left: Spotify uses 24px between menu / arrows / custom
+   links, Spicetify sets gap:4px inline on the arrows group, and custom-app links
+   carry their own margins. One gap for all. */
+html.ghost .main-globalNav-historyButtonsWrapper,
+html.ghost .main-globalNav-historyButtonsContainer,
+html.ghost .main-globalNav-historyButtons {
+  gap: 8px !important;
+}
+
+html.ghost .main-globalNav-historyButtons {
+  padding-inline: 0 !important;
+}
+
+html.ghost .custom-navlinks-scrollable_container div[role="presentation"] > * {
+  margin-inline-end: 0 !important;
+}
+
+html.ghost .custom-navlinks-scrollable_container div[role="presentation"] {
+  gap: 8px;
+}
+
+html.ghost .Root__globalNav .main-globalNav-navLinkActive {
+  color: var(--spice-button) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--spice-button) 60%, transparent);
+}
+
+/* Search: glass field with an accent focus ring (the input itself only has a
+   hashed class, so it's reached through the readable container). */
+html.ghost .main-globalNav-searchInputContainer input {
+  background: rgba(var(--spice-rgb-text), 0.08) !important;
+}
+
+html.ghost .main-globalNav-searchInputContainer input:hover {
+  background: rgba(var(--spice-rgb-text), 0.12) !important;
+}
+
+html.ghost .main-globalNav-searchInputContainer input:focus {
+  background: rgba(var(--spice-rgb-text), 0.12) !important;
+  box-shadow: inset 0 0 0 2px var(--spice-button) !important;
+}
+
+html.ghost .main-globalNav-searchInputContainer:focus-within svg {
+  color: var(--spice-button);
+}
+
+/* Auto-hide: the bar becomes an overlay (so its grid row collapses and the main
+   view gets the space), parked above the window with a 10px invisible strip to
+   hover. The strip keeps the window draggable. */
+html.ghost-nav-autohide .Root__top-container,
+html.ghost-library-autohide .Root__top-container {
+  position: relative;
+}
+
+html.ghost-nav-autohide .Root__globalNav {
+  position: absolute !important;
+  top: 0;
+  left: var(--panel-gap);
+  right: var(--panel-gap);
+  z-index: var(--above-everything-grid-area-z-index);
+  transform: translateY(calc(-100% + 10px));
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
+  transform: translateY(var(--panel-gap));
+  opacity: 1;
+}
+
+/* --- Library (left sidebar) ------------------------------------------------ */
+
+/* Rows: [role=row] (aria-selected="true" = the open page) > listRow > cover <img>.
+   Avoids the versioned e-10860-legacy-* classes and the localised aria-label.
+   Rounding the <img> is safe for artists: their round wrapper still clips it. */
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"] [data-encore-id="listRow"] img {
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"]:hover [data-encore-id="listRow"] img {
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px color-mix(in oklab, var(--spice-button) 45%, transparent);
+}
+
+/* Active marker: accent ring on the cover + a small accent pill at the edge. */
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"] {
+  position: relative;
+}
+
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"][aria-selected="true"] [data-encore-id="listRow"] img {
+  box-shadow: 0 0 0 2px var(--spice-button);
+}
+
+html.ghost .main-yourLibraryX-libraryRootlist [role="row"][aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  width: 4px;
+  height: 40%;
+  transform: translateY(-50%);
+  border-radius: 0 4px 4px 0;
+  background: var(--spice-button);
+}
+
+/* Collapsed library = Spotify sets --left-sidebar-width: 72 inline
+   (COLLAPSED=72 in xpui). zoom shrinks the whole rail — covers, icons, width. */
+html.ghost-slim-rail .Root__nav-bar[style*="--left-sidebar-width: 72;"] {
+  zoom: 0.82;
+}
+
+/* Auto-hide: same overlay trick as the top bar. As an absolutely positioned grid
+   item it keeps its grid-area as containing block, while its column collapses. */
+html.ghost-library-autohide .Root__nav-bar {
+  position: absolute !important;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--above-everything-grid-area-z-index);
+  transform: translateX(calc(-100% + 10px));
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+html.ghost-library-autohide .Root__nav-bar:is(:hover, :focus-within) {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* --- Spicetify Marketplace ------------------------------------------------
+   Its stylesheet (spicetify-routes-marketplace.css) uses readable marketplace-*
+   classes and --spice-* colours, so these hooks are stable. Solid surfaces become
+   glass; card styling is scoped to .marketplace-grid so Spotify's own cards
+   elsewhere aren't touched. */
+
+/* Sort / filter bar and README header (solid --spice-main). It's sticky, so
+   content scrolls underneath it — blur that, or it reads through the glass.
+   (Only a small area, so the backdrop-filter is cheap.) */
+html.ghost .marketplace-header {
+  background-color: var(--ghost-sticky) !important;
+  backdrop-filter: blur(24px) saturate(1.2);
+  border-radius: var(--ghost-radius);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  /* Marketplace only pads the bottom (8px), which pushed everything up. */
+  padding: 8px 12px !important;
+}
+
+/* Header controls: one 32px height, vertically centred. Marketplace pads them
+   differently (dropdown 8px, search 10px, ⚙ button 10px/14px/6px). */
+html.ghost :is(.marketplace-header__left, .marketplace-header__right) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html.ghost .marketplace-header :is(.Dropdown-root, .marketplace-sortBox) {
+  display: flex;
+  align-items: center;
+}
+
+html.ghost .marketplace-header .Dropdown-control {
+  height: 32px;
+  padding: 0 32px 0 14px !important;
+  display: flex;
+  align-items: center;
+}
+
+html.ghost .marketplace-header .Dropdown-arrow {
+  top: 50% !important;
+  margin-top: -2px !important;
+}
+
+html.ghost .marketplace-header .searchbar-bar {
+  height: 32px;
+  padding: 0 14px !important;
+  box-sizing: border-box;
+}
+
+html.ghost .marketplace-header .marketplace-header-icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(var(--spice-rgb-text), 0.08) !important;
+}
+
+html.ghost .marketplace-header .marketplace-header-icon-button:hover {
+  background-color: color-mix(in oklab, var(--spice-button) 30%, transparent) !important;
+}
+
+/* README pages: water.css-style variables (on the Marketplace's :root) drive
+   every colour in #marketplace-readme, so re-point them at Ghost's palette and
+   turn the narrow solid box into a glass card. */
+html.ghost #marketplace-readme {
+  --background-body: transparent;
+  --background: rgba(var(--spice-rgb-text), 0.07);
+  --background-alt: rgba(var(--spice-rgb-text), 0.1);
+  --text-main: var(--spice-subtext);
+  --text-bright: var(--spice-text);
+  --text-muted: var(--spice-subtext);
+  --links: var(--spice-button);
+  --focus: var(--spice-button);
+  --border: rgba(var(--spice-rgb-text), 0.15);
+  --code: color-mix(in oklab, var(--spice-button) 55%, var(--spice-text));
+  --button-base: rgba(var(--spice-rgb-text), 0.08);
+  --button-hover: rgba(var(--spice-rgb-text), 0.14);
+  --selection: color-mix(in oklab, var(--spice-button) 40%, transparent);
+
+  max-width: 960px !important;
+  margin: 24px auto !important;
+  padding: 28px 36px !important;
+  background: rgba(var(--spice-rgb-text), 0.04) !important;
+  border-radius: calc(var(--ghost-radius) + 4px);
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+}
+
+html.ghost #marketplace-readme :is(img, video) {
+  border-radius: 8px;
+}
+
+html.ghost #marketplace-readme pre {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+html.ghost #marketplace-readme :is(blockquote, q) {
+  border-left-color: var(--spice-button);
+  border-radius: 0 8px 8px 0;
+  background: rgba(var(--spice-rgb-text), 0.04);
+}
+
+/* Tabs: pills instead of 4px boxes. */
+html.ghost .marketplace-tabBar-headerItemLink {
+  border-radius: 999px !important;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+html.ghost .marketplace-tabBar-headerItemLink:hover {
+  background-color: rgba(var(--spice-rgb-text), 0.08);
+}
+
+html.ghost .marketplace-tabBar-active {
+  background-color: rgba(var(--spice-rgb-text), 0.14) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--spice-button) 50%, transparent);
+}
+
+/* Cards (Spotify's .main-card-card: solid --spice-player). */
+html.ghost .marketplace-grid .main-card-card {
+  background: rgba(var(--spice-rgb-text), 0.04) !important;
+  border-radius: var(--ghost-radius) !important;
+  box-shadow: inset 0 0 0 1px var(--ghost-border);
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+html.ghost .marketplace-grid .main-card-card:is(:hover, :focus-within) {
+  background: rgba(var(--spice-rgb-text), 0.09) !important;
+  transform: translateY(-2px);
+}
+
+/* Installed: accent ring instead of a hard 1px border. */
+html.ghost .marketplace-grid .marketplace-card--installed {
+  border: 0 !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--spice-button) 70%, transparent),
+    0 0 18px color-mix(in oklab, var(--spice-button) 18%, transparent) !important;
+}
+
+html.ghost .marketplace-grid .main-cardImage-imageWrapper {
+  border-radius: calc(var(--ghost-radius) - 4px);
+  overflow: hidden;
+}
+
+html.ghost .marketplace-grid .marketplace-card__tag,
+html.ghost .marketplace-grid .marketplace-card__tags-more-btn {
+  border-radius: 999px !important;
+}
+
+/* Sort dropdown + search field (solid --spice-sidebar). The open menu stays
+   opaque-ish (elevated) for readability over the grid. */
+html.ghost .Dropdown-control,
+html.ghost .searchbar-bar {
+  background-color: rgba(var(--spice-rgb-text), 0.08) !important;
+  border-color: transparent !important;
+  border-radius: 999px !important;
+}
+
+html.ghost .Dropdown-control:hover {
+  background-color: rgba(var(--spice-rgb-text), 0.14) !important;
+}
+
+html.ghost .searchbar-bar:focus {
+  box-shadow: inset 0 0 0 2px var(--spice-button);
+  outline: none;
+}
+
+html.ghost .Dropdown-root.is-open .Dropdown-control {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+html.ghost .Dropdown-menu {
+  background-color: var(--spice-main-elevated) !important;
+  border-radius: 0 0 12px 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.ghost .marketplace-header-icon-button {
+  border-radius: 999px;
+}
+
+/* --- Optional layout tweaks (settings → Layout) ------------------------- */
+
+/* Fade the main view's content out at its top and bottom edges. */
+html.ghost-fade-edges .main-view-container__scroll-node {
+  mask-image: linear-gradient(transparent, #000 24px, #000 calc(100% - 48px), transparent);
+}
+
+/* Closed right sidebar leaves a 40px "peek" strip (Root__right-sidebar-peek,
+   without -expanded). Hide it; its grid column collapses to 0 but the grid gap
+   stays, so pull the main view over it. */
+html.ghost-hide-collapsed-sidebar
+  .Root__right-sidebar:has(.Root__right-sidebar-peek:not(.Root__right-sidebar-expanded)) {
+  display: none !important;
+}
+
+html.ghost-hide-collapsed-sidebar
+  .Root__top-container:has(.Root__right-sidebar-peek:not(.Root__right-sidebar-expanded))
+  .Root__main-view {
+  margin-inline-end: calc(var(--panel-gap) * -1);
+}
+
+/* --- Top bar button ----------------------------------------------------- */
+
+/* Spicetify's wrapper is a plain block <div>; the inline-flex ButtonTertiary
+   inside sits on the text baseline and drops a few px. Centre it like the cart. */
+.ghost-topbar-button {
+  display: flex;
+  align-items: center;
+}
+
+/* --- Accent ------------------------------------------------------------- */
+
+html.ghost ::selection {
+  background: rgba(var(--spice-rgb-button), 0.35);
+}
+
+/* --- Settings modal ----------------------------------------------------- */
+
+.ghost-settings {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 8px;
+}
+
+.ghost-settings h3 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--spice-subtext);
+}
+
+.ghost-settings__row {
+  display: grid;
+  grid-template-columns: 1fr 200px 56px;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.ghost-settings__row--toggle,
+.ghost-settings__row--choice,
+.ghost-settings__row--color {
+  grid-template-columns: 1fr auto;
+}
+
+.ghost-settings__row--url {
+  grid-template-columns: 1fr 272px;
+}
+
+.ghost-choice {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(var(--spice-rgb-text), 0.08);
+}
+
+.ghost-choice button {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--spice-subtext);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ghost-choice button:hover {
+  color: var(--spice-text);
+}
+
+.ghost-choice button.ghost-selected {
+  background: var(--spice-text);
+  color: var(--spice-main);
+  font-weight: 700;
+}
+
+.ghost-color {
+  width: 36px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(var(--spice-rgb-text), 0.3);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.ghost-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid rgba(var(--spice-rgb-text), 0.2);
+  border-radius: 6px;
+  background: rgba(var(--spice-rgb-text), 0.06);
+  color: var(--spice-text);
+  font: inherit;
+}
+
+.ghost-input:focus {
+  outline: none;
+  border-color: var(--spice-button);
+}
+
+.ghost-settings__row output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--spice-subtext);
+}
+
+.ghost-settings input[type="range"] {
+  accent-color: var(--spice-button);
+  width: 100%;
+}
+
+.ghost-switch {
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(var(--spice-rgb-text), 0.2);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ghost-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--spice-text);
+  transition: transform 0.2s;
+}
+
+.ghost-switch:checked {
+  background: var(--spice-button);
+}
+
+.ghost-switch:checked::after {
+  transform: translateX(16px);
+}
+
+.ghost-settings__reset {
+  justify-self: start;
+  padding: 8px 16px;
+  border: 1px solid rgba(var(--spice-rgb-text), 0.3);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--spice-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ghost-settings__reset:hover {
+  border-color: var(--spice-text);
+}
