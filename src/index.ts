@@ -13,7 +13,15 @@ function spicetifyReady(): boolean {
 if (__DEV__) import("./dev").then((m) => m.installDevTools());
 
 (async () => {
-  while (!spicetifyReady()) await new Promise((r) => setTimeout(r, 100));
+  const started = Date.now();
+  let warned = false;
+  while (!spicetifyReady()) {
+    await new Promise((r) => setTimeout(r, 100));
+    if (!warned && Date.now() - started > 30_000) {
+      warned = true;
+      console.warn("[ghost] still waiting for Spicetify after 30 s — is Spicetify applied (`spicetify apply`)?");
+    }
+  }
   const { start } = await import("./app");
   start();
 })().catch((err) => console.error("[ghost] failed to start", err));

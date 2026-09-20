@@ -3,10 +3,10 @@
 // appear on hover.
 
 import { useEffect, useState } from "react";
-import { albumArt, currentBackground, onBackgroundChange } from "../background";
+import { currentBackground, onBackgroundChange } from "../background";
 import { Icon } from "../icons";
-import { Progress } from "./FullscreenView";
-import { useCurrentTrack, useLyrics, usePlaying } from "./hooks";
+import { PlayerControls, Progress } from "./controls";
+import { useCurrentTrack, useLyrics } from "./hooks";
 import { LyricsBody } from "./LyricsBody";
 
 const closeWindow = (e: { currentTarget: Element }) => e.currentTarget.ownerDocument.defaultView?.close();
@@ -20,10 +20,7 @@ function useBackground() {
 export function PipView() {
   const track = useCurrentTrack();
   const state = useLyrics(track);
-  const playing = usePlaying();
   const background = useBackground();
-  const [art, setArt] = useState(albumArt);
-  useEffect(() => setArt(albumArt()), [track?.uri]);
 
   return (
     <div className="ghost-pip">
@@ -33,7 +30,7 @@ export function PipView() {
       />
 
       <header className="ghost-pip__header">
-        {art && <img className="ghost-pip__cover" src={art} alt="" />}
+        {track?.image && <img className="ghost-pip__cover" src={track.image} alt="" />}
         <div className="ghost-pip__meta">
           <div className="ghost-pip__title">{track?.title}</div>
           <div className="ghost-pip__artist">{track?.artist}</div>
@@ -51,17 +48,7 @@ export function PipView() {
 
       <footer className="ghost-pip__controls">
         <Progress />
-        <div className="ghost-pip__buttons">
-          <button className="ghost-round-button" onClick={() => Spicetify.Player.back()} aria-label="Previous">
-            <Icon name="prev" />
-          </button>
-          <button className="ghost-round-button ghost-pip__play" onClick={() => Spicetify.Player.togglePlay()} aria-label={playing ? "Pause" : "Play"}>
-            <Icon name={playing ? "pause" : "play"} />
-          </button>
-          <button className="ghost-round-button" onClick={() => Spicetify.Player.next()} aria-label="Next">
-            <Icon name="next" />
-          </button>
-        </div>
+        <PlayerControls className="ghost-pip__buttons" />
       </footer>
     </div>
   );

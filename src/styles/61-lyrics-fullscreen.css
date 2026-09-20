@@ -20,6 +20,7 @@ html.ghost-fullscreen .Root {
 
 .ghost-fs {
   position: relative;
+  box-sizing: border-box; /* height: 100% includes the padding */
   height: 100%;
   display: grid;
   grid-template-columns: minmax(280px, 36%) 1fr;
@@ -44,7 +45,7 @@ html.ghost-fullscreen .Root {
   right: 24px;
 }
 
-.ghost-fs--idle :is(.ghost-fs__close, .ghost-fs__controls, .ghost-fs__progress) {
+.ghost-fs--idle :is(.ghost-fs__close, .ghost-fs__controls, .ghost-progress) {
   opacity: 0;
 }
 
@@ -78,37 +79,6 @@ html.ghost-fullscreen .Root {
   color: var(--spice-subtext);
 }
 
-.ghost-fs__progress {
-  transition: opacity 0.3s;
-}
-
-/* 16px tall click target; the 4px track is drawn as a centred background. */
-.ghost-fs__bar {
-  height: 16px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  background: linear-gradient(rgba(var(--spice-rgb-text), 0.2), rgba(var(--spice-rgb-text), 0.2)) center / 100% 4px no-repeat;
-}
-
-.ghost-fs__fill {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--spice-text);
-}
-
-.ghost-fs__bar:hover .ghost-fs__fill {
-  background: var(--spice-button);
-}
-
-.ghost-fs__times {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--spice-subtext);
-}
-
 .ghost-fs__controls {
   display: flex;
   align-items: center;
@@ -122,15 +92,9 @@ html.ghost-fullscreen .Root {
   height: 48px;
 }
 
-.ghost-fs__controls .ghost-fs__play {
+.ghost-fs__controls .ghost-controls__play {
   width: 64px;
   height: 64px;
-  background: var(--spice-text);
-  color: var(--spice-main);
-}
-
-.ghost-fs__controls .ghost-fs__play:hover {
-  background: var(--spice-button);
 }
 
 .ghost-fs__lyrics {
@@ -146,4 +110,100 @@ html.ghost-fullscreen .Root {
 
 .ghost-lyrics--fullscreen .ghost-lyrics__line {
   font-size: calc(var(--ghost-lyrics-size) * 1.2);
+}
+
+/* Narrow or tall window (e.g. Spotify on half the screen with "Fullscreen fills:
+   Spotify window"): lyrics on top, a compact now-playing bar below them,
+   instead of two columns. Without lyrics the centred column above still fits. */
+@media (max-width: 900px), (max-aspect-ratio: 1/1) {
+  .ghost-fs:not(.ghost-fs--no-lyrics) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 12px;
+    padding: 0 clamp(16px, 5vw, 48px) 20px;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-fs__lyrics {
+    grid-row: 1;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-fs__now {
+    grid-row: 2;
+    width: 100%;
+    max-width: 640px;
+    justify-self: center;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "cover meta"
+      "progress progress"
+      "controls controls";
+    align-items: center;
+    gap: 10px 16px;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-fs__cover {
+    grid-area: cover;
+    width: 72px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-fs__meta {
+    grid-area: meta;
+    min-width: 0;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) :is(.ghost-fs__title, .ghost-fs__artist) {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-fs__title {
+    font-size: 1.3rem;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-fs__artist {
+    margin-top: 2px;
+    font-size: 0.95rem;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-progress {
+    grid-area: progress;
+  }
+
+  .ghost-fs:not(.ghost-fs--no-lyrics) .ghost-fs__controls {
+    grid-area: controls;
+    gap: 14px;
+  }
+
+  .ghost-fs__controls .ghost-round-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ghost-fs__controls .ghost-controls__play {
+    width: 52px;
+    height: 52px;
+  }
+
+  .ghost-fs__close {
+    top: 16px;
+    right: 16px;
+  }
+
+  .ghost-lyrics--fullscreen {
+    padding: 25vh 0 45vh;
+  }
+
+  .ghost-lyrics--fullscreen .ghost-lyrics__line {
+    font-size: var(--ghost-lyrics-size);
+  }
+
+  /* Centred, like the lyrics page (see 60-lyrics.css). */
+  .ghost-lyrics--fullscreen {
+    --ghost-lyrics-centered: 1;
+  }
 }

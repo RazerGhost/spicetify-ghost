@@ -1,0 +1,24 @@
+/* --- Page transition -------------------------------------------------------
+   Spotify swaps pages by removing the old one and rendering the new one a few
+   hundred ms later (measured on this build: the old page goes ~450 ms after the
+   click, the new one arrives up to ~300 ms after that on a first visit). On
+   Ghost's glass panels that gap reads as an empty panel and the new page pops
+   in; fading it in makes the swap read as one movement.
+   The page is whatever Spotify renders into <main> inside the scroll node: a
+   <section> for albums, artists and library pages, a <div> for home and search. */
+html.ghost .main-view-container__scroll-node-child > main > * {
+  animation: ghost-page-in 220ms ease-out both;
+}
+
+@keyframes ghost-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ghost .main-view-container__scroll-node-child > main > * {
+    animation: none;
+  }
+}

@@ -4,74 +4,16 @@
 // (Named FullscreenView, not Fullscreen: Windows file names are case-insensitive
 // and would collide with fullscreen.tsx.)
 
-import { useEffect, useRef, useState } from "react";
-import { albumArt } from "../background";
+import { useEffect, useState } from "react";
 import { Icon } from "../icons";
-import { useCurrentTrack, useLyrics, usePlaying } from "./hooks";
+import { PlayerControls, Progress } from "./controls";
+import { useCurrentTrack, useLyrics } from "./hooks";
 import { LyricsBody } from "./LyricsBody";
-
-function formatTime(ms: number) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
-// Updated per frame straight on the DOM (no React re-renders), and only when
-// something visibly changed — nothing is written while paused. Uses the rAF of
-// the window it's rendered in (also used by the picture-in-picture view).
-export function Progress() {
-  const fill = useRef<HTMLDivElement>(null);
-  const elapsed = useRef<HTMLSpanElement>(null);
-  const total = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const win = fill.current?.ownerDocument.defaultView ?? window;
-    let frame = 0;
-    let lastPosition = -1;
-    let lastElapsed = "";
-    let lastTotal = "";
-    const tick = () => {
-      frame = win.requestAnimationFrame(tick);
-      const position = Spicetify.Player.getProgress();
-      if (position === lastPosition) return;
-      lastPosition = position;
-      const duration = Spicetify.Player.getDuration() || 1;
-      fill.current?.style.setProperty("width", `${Math.min(100, (position / duration) * 100)}%`);
-      const e = formatTime(position);
-      const t = formatTime(duration);
-      if (e !== lastElapsed && elapsed.current) elapsed.current.textContent = lastElapsed = e;
-      if (t !== lastTotal && total.current) total.current.textContent = lastTotal = t;
-    };
-    tick();
-    return () => win.cancelAnimationFrame(frame);
-  }, []);
-
-  const onSeek = (e: { currentTarget: HTMLDivElement; clientX: number }) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    Spicetify.Player.seek(Math.round(fraction * Spicetify.Player.getDuration()));
-  };
-
-  return (
-    <div className="ghost-fs__progress">
-      <div className="ghost-fs__bar" onClick={onSeek}>
-        <div ref={fill} className="ghost-fs__fill" />
-      </div>
-      <div className="ghost-fs__times">
-        <span ref={elapsed} />
-        <span ref={total} />
-      </div>
-    </div>
-  );
-}
 
 export function FullscreenView({ onClose }: { onClose: () => void }) {
   const track = useCurrentTrack();
   const state = useLyrics(track);
-  const playing = usePlaying();
-  const [art, setArt] = useState(albumArt);
   const [idle, setIdle] = useState(false);
-
-  useEffect(() => setArt(albumArt()), [track?.uri]);
 
   // Hide the cursor and chrome after 3s without mouse movement.
   useEffect(() => {
@@ -97,23 +39,13 @@ export function FullscreenView({ onClose }: { onClose: () => void }) {
       </button>
 
       <div className="ghost-fs__now">
-        {art && <img className="ghost-fs__cover" src={art} alt="" />}
+        {track?.image && <img className="ghost-fs__cover" src={track.image} alt="" />}
         <div className="ghost-fs__meta">
           <div className="ghost-fs__title">{track?.title}</div>
           <div className="ghost-fs__artist">{track?.artist}</div>
         </div>
         <Progress />
-        <div className="ghost-fs__controls">
-          <button className="ghost-round-button" onClick={() => Spicetify.Player.back()} aria-label="Previous">
-            <Icon name="prev" size={18} />
-          </button>
-          <button className="ghost-round-button ghost-fs__play" onClick={() => Spicetify.Player.togglePlay()} aria-label={playing ? "Pause" : "Play"}>
-            <Icon name={playing ? "pause" : "play"} size={22} />
-          </button>
-          <button className="ghost-round-button" onClick={() => Spicetify.Player.next()} aria-label="Next">
-            <Icon name="next" size={18} />
-          </button>
-        </div>
+        <PlayerControls className="ghost-fs__controls" iconSize={18} playIconSize={22} />
       </div>
 
       {hasLyrics && (

@@ -31,5 +31,7 @@ export type GhostPlatform = {
   UpdateAPI?: { _updateUiClient?: UpdateUiClient };
 };
 
+export const isWindows = navigator.userAgent.includes("Windows");
+
 export const platform = (): GhostPlatform => Spicetify.Platform;
 export const history = (): SpotifyHistory => platform().History;

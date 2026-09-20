@@ -3,7 +3,6 @@
 // No third-party service receives any Spotify token: Spotify's endpoint goes
 // through Spicetify.CosmosAsync (Spotify's own auth), the others are public.
 
-import { albumArt } from "../background";
 import { platform } from "../platform";
 import { parseLRC, parseTTML, staticLyrics } from "./parse";
 import type { Line, Lyrics, TrackInfo } from "./types";
@@ -13,9 +12,21 @@ const SPOTIFY = "https://spclient.wg.spotify.com/color-lyrics/v2";
 const LRCLIB = "https://lrclib.net/api";
 const LRCLIB_HEADERS = { "Lrclib-Client": "Ghost (https://github.com/RazerGhost/spicetify-ghost)" };
 
+/** Per request: a hanging provider must not keep "Loading lyrics…" up forever. */
+const TIMEOUT = 8000;
+
+function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`timed out after ${TIMEOUT} ms`)), TIMEOUT)),
+  ]);
+}
+
+const get = (url: string, headers?: Record<string, string>) => fetch(url, { headers, signal: AbortSignal.timeout(TIMEOUT) });
+
 async function fromAmll(track: TrackInfo): Promise<Lyrics | null> {
   if (!track.id) return null;
-  const res = await fetch(`${AMLL}/${encodeURIComponent(track.id)}.ttml`);
+  const res = await get(`${AMLL}/${encodeURIComponent(track.id)}.ttml`);
   if (!res.ok) return null; // 404 = not in the database
   return parseTTML(await res.text());
 }
@@ -28,20 +39,22 @@ async function requestSpotifyLyrics(track: TrackInfo): Promise<any> {
   const builder = platform().RequestBuilder;
   if (builder?.build) {
     try {
-      const res = await builder
-        .build()
-        .withHost(SPOTIFY)
-        .withPath(`/track/${encodeURIComponent(track.id!)}/image/${encodeURIComponent(track.image ?? "")}`)
-        .withQueryParameters({ format: "json", vocalRemoval: false })
-        .withEndpointIdentifier("/track/{trackId}")
-        .send();
+      const res = await withTimeout(
+        builder
+          .build()
+          .withHost(SPOTIFY)
+          .withPath(`/track/${encodeURIComponent(track.id!)}/image/${encodeURIComponent(track.image ?? "")}`)
+          .withQueryParameters({ format: "json", vocalRemoval: false })
+          .withEndpointIdentifier("/track/{trackId}")
+          .send(),
+      );
       return res?.body;
     } catch (err: any) {
       if (err?.status === 404) return null; // no lyrics for this track
       throw err;
     }
   }
-  return Spicetify.CosmosAsync.get(`${SPOTIFY}/track/${track.id}?format=json&vocalRemoval=false&market=from_token`);
+  return withTimeout(Spicetify.CosmosAsync.get(`${SPOTIFY}/track/${track.id}?format=json&vocalRemoval=false&market=from_token`));
 }
 
 async function fromSpotify(track: TrackInfo): Promise<Lyrics | null> {
@@ -74,14 +87,17 @@ async function fromLrclib(track: TrackInfo): Promise<Lyrics | null> {
     duration: String(Math.round(track.duration)),
   });
   let record: LrclibRecord | null = null;
-  const exact = await fetch(`${LRCLIB}/get?${params}`, { headers: LRCLIB_HEADERS });
+  const exact = await get(`${LRCLIB}/get?${params}`, LRCLIB_HEADERS);
   if (exact.ok) record = await exact.json();
   else {
     // Fall back to a search (album names often differ between services).
     const search = new URLSearchParams({ track_name: track.title, artist_name: track.artist });
-    const res = await fetch(`${LRCLIB}/search?${search}`, { headers: LRCLIB_HEADERS });
+    const res = await get(`${LRCLIB}/search?${search}`, LRCLIB_HEADERS);
     const results: (LrclibRecord & { duration?: number })[] = res.ok ? await res.json() : [];
-    record = results.find((r) => r.syncedLyrics && Math.abs((r.duration ?? 0) - track.duration) < 3) ?? results[0] ?? null;
+    // Only accept a result of about the same length — anything else is likely a
+    // different song or version. Unknown track length: trust the ranking.
+    const close = results.filter((r) => !track.duration || Math.abs((r.duration ?? 0) - track.duration) < 3);
+    record = close.find((r) => r.syncedLyrics) ?? close[0] ?? null;
   }
   if (!record) return null;
   if (record.instrumental) return { kind: "static", provider: "lrclib", lines: [] };
@@ -96,6 +112,8 @@ const PROVIDERS: [string, (track: TrackInfo) => Promise<Lyrics | null>][] = [
   ["spotify", fromSpotify],
   ["lrclib", fromLrclib],
 ];
+/** How many of the first providers are started together. */
+const EAGER = 2;
 
 // --- cache + public API ----------------------------------------------------------
 
@@ -106,14 +124,18 @@ const CACHE_LIMIT = 50;
  *  finding nothing — such a miss shouldn't be cached. */
 async function resolve(track: TrackInfo): Promise<{ lyrics: Lyrics | null; errored: boolean }> {
   let errored = false;
-  for (const [name, provider] of PROVIDERS) {
-    try {
-      const lyrics = await provider(track);
-      if (lyrics) return { lyrics, errored };
-    } catch (err) {
+  const attempt = ([name, provider]: (typeof PROVIDERS)[number]) =>
+    provider(track).catch((err) => {
       errored = true;
       console.warn(`[ghost] lyrics provider "${name}" failed`, err);
-    }
+      return null;
+    });
+  // AMLL and Spotify are asked at once (AMLL still wins); LRCLIB, a shared
+  // public service, only when both have nothing.
+  const eager = PROVIDERS.slice(0, EAGER).map(attempt);
+  for (let i = 0; i < PROVIDERS.length; i++) {
+    const lyrics = await (eager[i] ?? attempt(PROVIDERS[i]));
+    if (lyrics) return { lyrics, errored };
   }
   return { lyrics: null, errored };
 }
@@ -131,21 +153,4 @@ export function getLyrics(track: TrackInfo): Promise<Lyrics | null> {
     result.then((r) => r.errored && !r.lyrics && cache.delete(track.uri));
   }
   return pending;
-}
-
-/** Current track from Spicetify.Player, in the shape providers need. */
-export function currentTrack(): TrackInfo | null {
-  const item = Spicetify.Player.data?.item as any;
-  if (!item?.uri) return null;
-  const meta = item.metadata ?? {};
-  const isTrack = item.uri.startsWith("spotify:track:");
-  return {
-    uri: item.uri,
-    id: isTrack ? item.uri.split(":")[2] : undefined,
-    title: item.name ?? meta.title ?? "",
-    artist: item.artists?.[0]?.name ?? meta.artist_name ?? "",
-    album: item.album?.name ?? meta.album_title ?? "",
-    duration: (item.duration?.milliseconds ?? Number(meta.duration) ?? 0) / 1000,
-    image: albumArt(),
-  };
 }

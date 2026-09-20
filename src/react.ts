@@ -14,3 +14,20 @@ export function mount(element: ReactElement, container: HTMLElement): () => void
   ReactDOM.render(element, container);
   return () => ReactDOM.unmountComponentAtNode(container);
 }
+
+/** Append a new host <div id={id}> to `parent` (in parent's document — also a
+ *  picture-in-picture window) and mount `element` into it. `dispose` unmounts
+ *  and removes the host. */
+export function mountIn(parent: HTMLElement, id: string, element: ReactElement) {
+  const host = parent.ownerDocument.createElement("div");
+  host.id = id;
+  parent.append(host);
+  const unmount = mount(element, host);
+  return {
+    host,
+    dispose() {
+      unmount();
+      host.remove();
+    },
+  };
+}

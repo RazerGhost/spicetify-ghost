@@ -5,13 +5,18 @@ import type { Line, Lyrics, Vocal, Word } from "./types";
 
 // --- time --------------------------------------------------------------------
 
-/** "hh:mm:ss.fff" | "mm:ss.fff" | "ss.fff" | "12.3s" → seconds. */
+const OFFSET = /^(\d*\.?\d+)(h|ms|m|s)$/;
+const UNIT_SECONDS: Record<string, number> = { h: 3600, m: 60, s: 1, ms: 0.001 };
+
+/** "hh:mm:ss.fff" | "mm:ss.fff" | "ss.fff" | "12.3s" | "500ms" → seconds; 0 if unreadable. */
 export function parseTime(value: string | null | undefined): number {
   if (!value) return 0;
   const v = value.trim();
-  if (v.endsWith("s") && !v.includes(":")) return parseFloat(v);
-  const parts = v.split(":").map(Number);
-  return parts.reduce((total, part) => total * 60 + part, 0);
+  const offset = OFFSET.exec(v);
+  const seconds = offset
+    ? parseFloat(offset[1]) * UNIT_SECONDS[offset[2]]
+    : v.split(":").reduce((total, part) => total * 60 + Number(part), 0);
+  return Number.isFinite(seconds) ? seconds : 0;
 }
 
 // --- TTML (AMLL TTML DB) -------------------------------------------------------
@@ -85,7 +90,8 @@ export function parseTTML(xml: string): Lyrics | null {
     return line;
   });
 
-  return { kind: hasWordTiming ? "word" : "line", provider: "amll", lines };
+  // Empty <p>s (no text, no background vocals) would render as blank lines.
+  return { kind: hasWordTiming ? "word" : "line", provider: "amll", lines: lines.filter((l) => l.text || l.background) };
 }
 
 function textWithoutBackground(p: Element): string {

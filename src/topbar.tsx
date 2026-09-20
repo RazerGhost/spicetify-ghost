@@ -18,7 +18,7 @@ export function addTopbarButton(label: string, onClick: () => void) {
   const ButtonTertiary = Spicetify.ReactComponent?.ButtonTertiary;
   if (!ButtonTertiary) {
     // Fallback: plain Spicetify button (arrow styling) with our icon.
-    btn.button.innerHTML = iconMarkup("ghost");
+    btn.button.innerHTML = iconMarkup("ghost", 24);
     return;
   }
 

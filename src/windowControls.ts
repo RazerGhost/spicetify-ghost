@@ -13,10 +13,8 @@
 // Spotify re-sends its own 64-based value whenever zoom changes — we have to
 // re-apply ours after it (same reason Lucid re-sends for a few seconds).
 
-import { platform, type GhostPlatform } from "./platform";
+import { isWindows, platform, type GhostPlatform } from "./platform";
 import { getSettings, watchSettings } from "./settings/store";
-
-const isWindows = navigator.userAgent.includes("Windows");
 
 async function setTitlebarHeight(height: number) {
   const msg = { height };
@@ -42,11 +40,12 @@ function zoomFactor(): number {
 
 // The API object is registered as "NativeAPI"; look it up on Spicetify.Platform,
 // falling back to any Platform entry that has the method (names can change).
+// Only a hit is cached: early on the API may not be registered yet.
 type NativeApi = Required<NonNullable<GhostPlatform["NativeAPI"]>>;
-let nativeApi: NativeApi | null | undefined;
+let nativeApi: NativeApi | null = null;
 
 function findNativeApi(): NativeApi | null {
-  if (nativeApi !== undefined) return nativeApi;
+  if (nativeApi) return nativeApi;
   const p = platform() as Record<string, any>;
   let found: NativeApi | null = null;
   for (const key of ["NativeAPI", ...Object.keys(p)]) {
@@ -87,12 +86,23 @@ export function initWindowControls() {
   watchSettings((s) => [s.navGlass, s.navAutoHide, s.gap, s.hideWindowButtons], apply);
 
   // Zoom changes fire resize and make Spotify re-send its value; leaving
-  // fullscreen makes it show the buttons again. Follow up after both.
+  // fullscreen makes it show the buttons again. Follow up after both — but a
+  // plain window resize (zoom unchanged) needs nothing.
+  // (Compared after the debounce: Spotify may update --zoom-level after resize.)
   let timer: number | undefined;
-  const later = () => {
+  let zoom = zoomFactor();
+  let force = false; // a fullscreen change is pending (it also fires resize)
+  const later = (always: boolean) => {
+    force ||= always;
     clearTimeout(timer);
-    timer = window.setTimeout(applyRepeatedly, 300);
+    timer = window.setTimeout(() => {
+      const now = zoomFactor();
+      if (!force && now === zoom) return;
+      force = false;
+      zoom = now;
+      applyRepeatedly();
+    }, 300);
   };
-  window.addEventListener("resize", later);
-  document.addEventListener("fullscreenchange", later);
+  window.addEventListener("resize", () => later(false));
+  document.addEventListener("fullscreenchange", () => later(true));
 }

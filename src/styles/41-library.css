@@ -57,3 +57,13 @@ html.ghost-library-autohide .Root__nav-bar:is(:hover, :focus-within) {
   transform: translateX(0);
   opacity: 1;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  html.ghost-library-autohide .Root__nav-bar {
+    transition: none;
+  }
+
+  html.ghost .main-yourLibraryX-libraryRootlist [role="row"]:hover [data-encore-id="listRow"] img {
+    transform: none;
+  }
+}

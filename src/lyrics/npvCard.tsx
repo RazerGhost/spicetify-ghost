@@ -4,15 +4,14 @@
 // Hidden when the song has no lyrics, and while the full lyrics page is open.
 // Click the header to open the full page.
 
-import { Icon } from "../icons";
 import { history } from "../platform";
 import { mount } from "../react";
 import { getSettings, watchSettings } from "../settings/store";
 import { onDomChange } from "../watch";
-import { openFullscreen } from "./fullscreen";
 import { useCurrentTrack, useLyrics } from "./hooks";
+import { LyricsActions } from "./LyricsActions";
 import { LyricsView } from "./LyricsView";
-import { pipSupported, togglePip } from "./pip";
+import { LYRICS_ROUTE, onLyricsRoute } from "./route";
 
 function LyricsCard() {
   const track = useCurrentTrack();
@@ -22,19 +21,10 @@ function LyricsCard() {
   return (
     <section className="ghost-lyrics-card">
       <header className="ghost-lyrics-card__header">
-        <button className="ghost-lyrics-card__title" onClick={() => history().push("/lyrics")}>
+        <button className="ghost-lyrics-card__title" onClick={() => history().push(LYRICS_ROUTE)}>
           Lyrics
         </button>
-        <div className="ghost-lyrics-card__actions">
-          {pipSupported() && (
-            <button className="ghost-round-button ghost-lyrics-card__action" onClick={togglePip} title="Picture-in-picture" aria-label="Picture-in-picture">
-              <Icon name="pip" />
-            </button>
-          )}
-          <button className="ghost-round-button ghost-lyrics-card__action" onClick={openFullscreen} title="Fullscreen" aria-label="Fullscreen">
-            <Icon name="expand" />
-          </button>
-        </div>
+        <LyricsActions className="ghost-lyrics-card__actions" buttonClassName="ghost-lyrics-card__action" />
       </header>
       <LyricsView key={track?.uri} lyrics={state.lyrics} variant="card" />
     </section>
@@ -49,8 +39,7 @@ export function initLyricsCard() {
   const place = () => {
     const s = getSettings();
     const widget = document.querySelector(".main-nowPlayingView-panel > .main-nowPlayingView-nowPlayingWidget");
-    const onLyricsPage = history().location.pathname === "/lyrics";
-    if (!s.lyricsPage || !s.lyricsCard || !widget || onLyricsPage) {
+    if (!s.lyricsPage || !s.lyricsCard || !widget || onLyricsRoute()) {
       unmount?.();
       unmount = null;
       host.remove();

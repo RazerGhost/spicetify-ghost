@@ -83,11 +83,12 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
   opacity: 0.5;
 }
 
+/* Glow as drop-shadow, not text-shadow: a text-shadow is painted over the
+   background-clip:text word fill below, tinting sung and unsung words alike. */
 .ghost-lyrics__line[data-state="active"] {
   opacity: 1;
   transform: scale(1.03);
-  filter: none;
-  text-shadow: 0 0 28px color-mix(in oklab, var(--spice-button) 45%, transparent);
+  filter: drop-shadow(0 0 20px color-mix(in oklab, var(--spice-button) 45%, transparent));
 }
 
 /* Duet: second singer on the right. */
@@ -122,7 +123,8 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
 }
 
 /* Word sync: each word fills left→right with --ghost-p. Unsung part stays dim;
-   the soft 8% edge keeps the sweep from looking like a hard wipe. */
+   a soft 16% edge keeps the sweep from looking like a hard wipe. The ramp is
+   mapped so p = 0 is fully dim and p = 1 fully lit (not half-lit at the edges). */
 .ghost-lyrics--word .ghost-lyrics__line {
   opacity: 0.4;
 }
@@ -135,8 +137,8 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
   --ghost-p: 0;
   background-image: linear-gradient(
     90deg,
-    var(--spice-text) calc(var(--ghost-p) * 100% - 8%),
-    rgba(var(--spice-rgb-text), 0.35) calc(var(--ghost-p) * 100% + 8%)
+    var(--spice-text) calc(var(--ghost-p) * 116% - 16%),
+    rgba(var(--spice-rgb-text), 0.35) calc(var(--ghost-p) * 116%)
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -229,6 +231,48 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
   transform: scale(0.94);
 }
 
+/* --- playback controls (fullscreen + picture-in-picture, controls.tsx) --- */
+
+.ghost-controls__play {
+  background: var(--spice-text);
+  color: var(--spice-main);
+}
+
+.ghost-controls__play:hover {
+  background: var(--spice-button);
+}
+
+.ghost-progress {
+  transition: opacity 0.3s;
+}
+
+/* 16px tall click target; the 4px track is drawn as a centred background. */
+.ghost-progress__bar {
+  height: 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background: linear-gradient(rgba(var(--spice-rgb-text), 0.2), rgba(var(--spice-rgb-text), 0.2)) center / 100% 4px no-repeat;
+}
+
+.ghost-progress__fill {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--spice-text);
+}
+
+.ghost-progress__bar:hover .ghost-progress__fill {
+  background: var(--spice-button);
+}
+
+.ghost-progress__times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--spice-subtext);
+}
+
 .ghost-lyrics-page__actions {
   position: absolute;
   top: 16px;
@@ -238,23 +282,45 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
   gap: 8px;
 }
 
-/* The lyrics page centres its lyrics (fullscreen/card/PiP stay left-aligned).
-   With everything centred, duet lines can't sit on the "other side", so the
-   second singer is set apart by weight instead. */
-.ghost-lyrics--page .ghost-lyrics__line {
-  text-align: center;
-  transform-origin: center;
+/* Centred lyrics: a view opts in with --ghost-lyrics-centered: 1 — the lyrics
+   page and picture-in-picture here, the stacked fullscreen layout in
+   61-lyrics-fullscreen.css (the card stays left-aligned). A style query, so the
+   rules below exist once. With everything centred, duet lines can't sit on the
+   "other side", so the second singer is set apart by weight instead. */
+.ghost-lyrics--page,
+.ghost-lyrics--pip {
+  --ghost-lyrics-centered: 1;
 }
 
-.ghost-lyrics--page .ghost-lyrics__line--opposite {
-  font-weight: 600;
-  font-style: italic;
+@container style(--ghost-lyrics-centered: 1) {
+  .ghost-lyrics__line {
+    text-align: center;
+    transform-origin: center;
+  }
+
+  .ghost-lyrics__line--opposite {
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  .ghost-lyrics__interlude {
+    justify-content: center;
+  }
+
+  .ghost-lyrics__credit {
+    text-align: center;
+  }
 }
 
-.ghost-lyrics--page .ghost-lyrics__interlude {
-  justify-content: center;
-}
+/* Reduced motion: lines change state without scaling or easing (LyricsView
+   also scrolls instantly instead of smoothly). */
+@media (prefers-reduced-motion: reduce) {
+  .ghost-lyrics__line,
+  .ghost-lyrics__interlude {
+    transition: none;
+  }
 
-.ghost-lyrics--page .ghost-lyrics__credit {
-  text-align: center;
+  .ghost-lyrics__line[data-state="active"] {
+    transform: none;
+  }
 }

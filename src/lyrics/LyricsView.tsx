@@ -106,13 +106,20 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
     const onUserScroll = () => {
       if (!programmatic) userScrollAt = Date.now();
     };
+    // Pressing on the scroller itself (not a line) = grabbing its scrollbar.
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.target === root) onUserScroll();
+    };
     root.addEventListener("wheel", onUserScroll, { passive: true });
     root.addEventListener("touchmove", onUserScroll, { passive: true });
     root.addEventListener("keydown", onUserScroll);
+    root.addEventListener("pointerdown", onPointerDown);
 
+    const reducedMotion = win.matchMedia("(prefers-reduced-motion: reduce)");
     const scrollTo = (el: HTMLElement, smooth: boolean) => {
       programmatic = true;
-      root.scrollTo({ top: el.offsetTop - root.clientHeight * ANCHOR[variant], behavior: smooth ? "smooth" : "auto" });
+      const behavior = smooth && !reducedMotion.matches ? "smooth" : "auto";
+      root.scrollTo({ top: el.offsetTop - root.clientHeight * ANCHOR[variant], behavior });
       win.setTimeout(() => (programmatic = false), 600);
     };
 
@@ -163,12 +170,22 @@ export function LyricsView({ lyrics, variant = "page" }: { lyrics: Lyrics; varia
     }
     tick();
 
+    // The anchor is a fraction of the height: re-centre when the view resizes
+    // (e.g. the PiP window), unless the user is scrolling.
+    const ro = new win.ResizeObserver(() => {
+      const target = elements[Math.max(0, current)];
+      if (current !== -2 && target && Date.now() - userScrollAt > USER_SCROLL_PAUSE) scrollTo(target, false);
+    });
+    ro.observe(root);
+
     return () => {
       io.disconnect();
+      ro.disconnect();
       win.cancelAnimationFrame(frame);
       root.removeEventListener("wheel", onUserScroll);
       root.removeEventListener("touchmove", onUserScroll);
       root.removeEventListener("keydown", onUserScroll);
+      root.removeEventListener("pointerdown", onPointerDown);
     };
   }, [items, synced, variant]);
 

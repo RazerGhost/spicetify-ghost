@@ -31,16 +31,4 @@ export type Lyrics = {
   lines: Line[];
 };
 
-/** What providers need to know about the track. */
-export type TrackInfo = {
-  uri: string;
-  /** Spotify track id; undefined for local files. */
-  id?: string;
-  title: string;
-  artist: string;
-  album: string;
-  /** Seconds. */
-  duration: number;
-  /** Cover image URL — Spotify's lyrics endpoint wants it in the path. */
-  image?: string;
-};
+export type { TrackInfo } from "../player";

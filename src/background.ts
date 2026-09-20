@@ -1,4 +1,5 @@
-// Background: two stacked layers that crossfade whenever the image changes.
+// Background: two stacked layers that crossfade whenever the image changes
+// (the accent colour is in accent.ts).
 // Source is the current album art, a custom image URL, or nothing (solid colour).
 //
 // Performance: the image is blurred ONCE per song into a small canvas (1/SCALE of
@@ -9,6 +10,7 @@
 // the canvas. Custom images without CORS fall back to the live CSS filter
 // (.ghost-bg__layer--live in user.css).
 
+import { albumArt, onSongChange } from "./player";
 import { platform } from "./platform";
 import { getSettings, watchSettings, type Settings } from "./settings/store";
 
@@ -21,39 +23,6 @@ let lastImage = "";
 /** Decoded image currently shown — kept so filter/size changes can re-render it. */
 let shownImage: HTMLImageElement | null = null;
 const layerUrls = new WeakMap<HTMLElement, string>();
-
-function toHttps(url: string | undefined): string | undefined {
-  // Player metadata gives "spotify:image:<id>"; the CDN serves the same id.
-  if (!url) return undefined;
-  return url.startsWith("spotify:image:")
-    ? `https://i.scdn.co/image/${url.slice("spotify:image:".length)}`
-    : url;
-}
-
-const SIZE_ORDER = ["xlarge", "large", "standard", "default", "small"];
-
-function largest(images: { url: string; label: string }[] | undefined): string | undefined {
-  if (!images?.length) return undefined;
-  const rank = (label: string) => {
-    const i = SIZE_ORDER.indexOf(label);
-    return i === -1 ? SIZE_ORDER.length : i;
-  };
-  return [...images].sort((a, b) => rank(a.label) - rank(b.label))[0]?.url;
-}
-
-// Metadata image fields first; some items (e.g. music videos) may only carry
-// item.images / item.album.images, so fall back to those.
-export function albumArt(): string | undefined {
-  const item = Spicetify.Player.data?.item;
-  const meta = item?.metadata;
-  return toHttps(
-    meta?.image_xlarge_url ||
-      meta?.image_large_url ||
-      meta?.image_url ||
-      largest(item?.images) ||
-      largest(item?.album?.images),
-  );
-}
 
 let lastError = "";
 
@@ -198,87 +167,6 @@ async function rebake() {
   }
 }
 
-// --- accent colour -------------------------------------------------------------
-
-// Spotify's --essential-bright-accent / --text-bright-accent etc. point at these.
-const ACCENT_VARS = ["button", "button-active"];
-
-function hexToRgb(hex: string): [number, number, number] | undefined {
-  const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex.trim());
-  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : undefined;
-}
-
-// Relative luminance (0 = black, 1 = white), used to skip unreadable accents.
-function luminance([r, g, b]: [number, number, number]) {
-  const c = [r, g, b].map((v) => {
-    v /= 255;
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-}
-
-function setAccent(hex: string | undefined) {
-  const root = document.documentElement.style;
-  const rgb = hex ? hexToRgb(hex) : undefined;
-  for (const v of ACCENT_VARS) {
-    if (hex && rgb) {
-      root.setProperty(`--spice-${v}`, hex);
-      root.setProperty(`--spice-rgb-${v}`, rgb.join(","));
-    } else {
-      root.removeProperty(`--spice-${v}`);
-      root.removeProperty(`--spice-rgb-${v}`);
-    }
-  }
-}
-
-const readable = (hex: string | undefined) => {
-  const rgb = hexToRgb(hex ?? "");
-  return !!rgb && luminance(rgb) > 0.12 && luminance(rgb) < 0.85;
-};
-
-// Candidate colours from the album art, most vibrant first.
-// 1. Spicetify.colorExtractor — goes through CosmosAsync to spclient, which
-//    fails in current Spotify builds ("Resolver not found!").
-// 2. The GraphQL query Spotify's own UI uses (fetchExtractedColors, exposed by
-//    Spicetify in GraphQL.Definitions) for the cover image.
-// After the first failure, skip colorExtractor for the session — in builds where
-// it's broken it fails every time, costing a request per song.
-let colorExtractorWorks = true;
-
-async function artColors(): Promise<string[]> {
-  const uri = Spicetify.Player.data?.item?.uri;
-  if (!uri) return [];
-  if (colorExtractorWorks) {
-    try {
-      const c = await Spicetify.colorExtractor(uri);
-      if (c) return [c.VIBRANT_NON_ALARMING, c.VIBRANT, c.LIGHT_VIBRANT, c.PROMINENT];
-    } catch {
-      colorExtractorWorks = false;
-    }
-  }
-  const image = albumArt();
-  const query = (Spicetify.GraphQL as any)?.Definitions?.fetchExtractedColors;
-  if (!image || !query) return [];
-  try {
-    const res = await Spicetify.GraphQL.Request(query, { imageUris: [image] });
-    const colors = res?.data?.extractedColors?.[0];
-    return colors ? [colors.colorRaw?.hex, colors.colorLight?.hex, colors.colorDark?.hex] : [];
-  } catch {
-    return [];
-  }
-}
-
-async function artAccent(): Promise<string | undefined> {
-  return (await artColors()).find(readable);
-}
-
-async function updateAccent() {
-  const s = getSettings();
-  if (s.accentSource === "custom") return setAccent(s.accentColor);
-  if (s.accentSource === "theme") return setAccent(undefined);
-  setAccent(await artAccent());
-}
-
 // --- fade time -----------------------------------------------------------------
 
 // Match the background crossfade to Spotify's own crossfade setting (like Hazy).
@@ -317,23 +205,12 @@ export function initBackground() {
   }
   document.body.prepend(bg);
 
-  const onSong = () => {
+  onSongChange(() => {
     updateImage();
-    updateAccent();
     syncFadeTime();
-  };
-  Spicetify.Player.addEventListener("songchange", onSong);
+  });
 
-  // On startup Player.data is often still empty and no songchange fires until the
-  // next track, so poll briefly (max ~10s) for the current item before the first run.
-  (async () => {
-    for (let i = 0; i < 40 && !Spicetify.Player.data?.item; i++) {
-      await new Promise((r) => setTimeout(r, 250));
-    }
-    onSong();
-  })();
-
-  // Source/accent settings → reload; filter settings → re-bake (debounced, since
+  // Source settings → reload; filter settings → re-bake (debounced, since
   // sliders fire continuously); window size → re-bake for the new aspect ratio.
   let rebakeTimer: number | undefined;
   const rebakeSoon = (delay: number) => {
@@ -341,13 +218,7 @@ export function initBackground() {
     rebakeTimer = window.setTimeout(rebake, delay);
   };
 
-  watchSettings(
-    (s) => [s.bgSource, s.bgImageUrl, s.accentSource, s.accentColor],
-    () => {
-      updateImage();
-      updateAccent();
-    },
-  );
+  watchSettings((s) => [s.bgSource, s.bgImageUrl], updateImage);
   watchSettings((s) => [s.blur, s.brightness, s.saturation, s.contrast], () => rebakeSoon(60));
   window.addEventListener("resize", () => rebakeSoon(300));
 }

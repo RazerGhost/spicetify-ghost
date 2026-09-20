@@ -69,17 +69,18 @@ html.ghost .Root__globalNav
   background-color: rgba(var(--spice-rgb-text), 0.08) !important;
   color: var(--spice-subtext);
   transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
-}
 
-html.ghost .Root__globalNav
-  :is(
-    .main-globalNav-link-icon,
-    .main-globalNav-buddyFeed,
-    .main-globalNav-historyButtons button:not([hidden]),
-    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
-  ):not(:disabled):hover {
-  background-color: color-mix(in oklab, var(--spice-button) 30%, transparent) !important;
-  color: var(--spice-text);
+  &:not(:disabled):hover {
+    background-color: color-mix(in oklab, var(--spice-button) 30%, transparent) !important;
+    color: var(--spice-text);
+  }
+
+  /* Same icon size in every round button — Spicetify renders custom-app icons
+     (cart) at 24px, Spotify's own at 16px. */
+  & svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
 }
 
 /* On Windows the ⋯ app menu is *native*, like min/max/close — not in the DOM.
@@ -113,20 +114,6 @@ html.ghost .Root__globalNav :has(> .main-globalNav-link-icon) {
 
 html.ghost .Root__globalNav :has(> .main-globalNav-link-icon):not(.main-globalNav-searchContainer) {
   display: flex;
-}
-
-/* Same icon size in every round button — Spicetify renders custom-app icons
-   (cart) at 24px, Spotify's own at 16px. */
-html.ghost .Root__globalNav
-  :is(
-    .main-globalNav-link-icon,
-    .main-globalNav-buddyFeed,
-    .main-globalNav-historyButtons button:not([hidden]),
-    .main-globalNav-contentRight button:not([hidden]):not(:has(img))
-  )
-  svg {
-  width: 18px !important;
-  height: 18px !important;
 }
 
 /* Even spacing on the left: Spotify uses 24px between menu / arrows / custom
@@ -205,4 +192,10 @@ html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
 .ghost-topbar-button {
   display: flex;
   align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ghost-nav-autohide .Root__globalNav {
+    transition: none;
+  }
 }

@@ -3,10 +3,14 @@
 // so most settings are purely a CSS concern. background.ts reacts to the
 // background/accent source settings.
 
+import { isWindows } from "../platform";
+import { CONTROLS } from "./schema";
+
 export type BackgroundSource = "art" | "custom" | "solid";
 export type AccentSource = "art" | "custom" | "theme";
 export type BannerMode = "fade" | "hide";
 export type PlayerStyle = "floating" | "plain";
+export type FullscreenMode = "auto" | "screen" | "window";
 
 export type Settings = {
   // Background
@@ -39,6 +43,7 @@ export type Settings = {
   lyricsOffset: number; // ms; + = lyrics earlier
   lyricsCard: boolean;
   replaceFullscreen: boolean;
+  fullscreenMode: FullscreenMode; // whole screen, Spotify's window, or auto: whichever Spotify fills now
   romanize: boolean; // Korean built in
   romanizeJapanese: boolean; // downloads ~17 MB once
   romanizeChinese: boolean; // downloads ~320 KB once
@@ -84,6 +89,7 @@ export const DEFAULTS: Settings = {
   lyricsOffset: 0,
   lyricsCard: true,
   replaceFullscreen: true,
+  fullscreenMode: "auto",
   romanize: true,
   romanizeJapanese: false,
   romanizeChinese: false,
@@ -104,31 +110,56 @@ export const DEFAULTS: Settings = {
 const KEY = "ghost:settings";
 const listeners = new Set<() => void>();
 
+/** A saved value made valid for `key` (clamped to its slider range), or
+ *  undefined when it can't be used. */
+function validate(key: keyof Settings, value: unknown): unknown {
+  if (typeof value !== typeof DEFAULTS[key]) return undefined;
+  if (typeof value === "number" && !Number.isFinite(value)) return undefined;
+  const def = CONTROLS[key];
+  if (def?.kind === "choice" && !def.options.some((o) => o.value === value)) return undefined;
+  if (def?.kind === "slider") return Math.min(def.max, Math.max(def.min, value as number));
+  return value;
+}
+
+/** Saved settings over the defaults — only known keys with a valid value, so
+ *  removed settings aren't carried along forever and bad values can't break things. */
 function load(): Settings {
+  const settings: Settings = { ...DEFAULTS };
   try {
-    const saved = JSON.parse(localStorage.getItem(KEY) ?? "{}");
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {};
     // v0.1 had a boolean instead of accentSource.
     if (saved.accentFromArt === false && !saved.accentSource) saved.accentSource = "theme";
-    delete saved.accentFromArt;
-    return { ...DEFAULTS, ...saved };
+    for (const key of Object.keys(DEFAULTS) as (keyof Settings)[]) {
+      const value = validate(key, saved[key]);
+      if (value !== undefined) (settings as Record<keyof Settings, unknown>)[key] = value;
+    }
   } catch {
-    return { ...DEFAULTS };
+    // unreadable: defaults
   }
+  return settings;
 }
 
 let current = load();
 
 export const getSettings = () => current;
 
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(current));
+  } catch (err) {
+    console.warn("[ghost] couldn't save settings", err); // e.g. storage quota
+  }
+}
+
 // Sliders fire ~60 changes/s while dragging: apply instantly, persist shortly after.
 let persistTimer: number | undefined;
 function persist() {
   clearTimeout(persistTimer);
-  persistTimer = window.setTimeout(() => localStorage.setItem(KEY, JSON.stringify(current)), 250);
+  persistTimer = window.setTimeout(save, 250);
 }
 window.addEventListener("beforeunload", () => {
   clearTimeout(persistTimer);
-  localStorage.setItem(KEY, JSON.stringify(current));
+  save();
 });
 
 export function setSettings(patch: Partial<Settings>) {
@@ -163,6 +194,8 @@ export function watchSettings(select: (s: Settings) => unknown, onChange: () => 
 // tint is applied, because a CSS variable can't be mixed with its own old value.
 const TINTED = ["main", "main-elevated", "highlight", "highlight-elevated", "sidebar", "player", "card", "subtext"];
 let baseCaptured = false;
+/** colors.css may not be readable yet at startup: retry for ~10 s. */
+let captureRetries = 20;
 const appliedVars: Record<string, string> = {};
 
 // Returns false if colors.css isn't readable — then tinting stays off, because
@@ -178,7 +211,10 @@ function captureBaseColors(root: HTMLElement): boolean {
 export function applySettings() {
   const root = document.documentElement;
   const s = current;
-  if (!baseCaptured) baseCaptured = captureBaseColors(root);
+  if (!baseCaptured) {
+    baseCaptured = captureBaseColors(root);
+    if (!baseCaptured && captureRetries-- > 0) setTimeout(applySettings, 500);
+  }
 
   const vars: Record<string, string> = {
     "--ghost-blur": `${s.blur}px`,
@@ -211,7 +247,7 @@ export function applySettings() {
   root.classList.toggle("ghost-nav-autohide", s.navAutoHide);
   root.classList.toggle("ghost-slim-rail", s.slimRail);
   root.classList.toggle("ghost-library-autohide", s.libraryAutoHide);
-  root.classList.toggle("ghost-no-window-buttons", s.hideWindowButtons && navigator.userAgent.includes("Windows"));
+  root.classList.toggle("ghost-no-window-buttons", s.hideWindowButtons && isWindows);
 
   root.classList.toggle("ghost-grain", s.grain);
   root.classList.toggle("ghost-animated", s.animated && s.bgSource !== "solid");

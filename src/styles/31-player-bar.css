@@ -26,7 +26,6 @@ html.ghost .main-nowPlayingBar-nowPlayingBar {
 .ghost-volume:hover,
 .ghost-volume:focus-visible {
   color: var(--spice-text);
-  outline: none;
 }
 
 .ghost-volume__input {

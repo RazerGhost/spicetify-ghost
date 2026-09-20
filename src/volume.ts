@@ -75,12 +75,17 @@ label.addEventListener("keydown", (e) => {
 
 // --- mouse wheel -----------------------------------------------------------
 
-// Touchpads send many small deltas; accumulate until a "notch" worth has built up.
+// Touchpads send many small deltas; accumulate until a "notch" worth has built up
+// — within one gesture: stray deltas minutes apart mustn't add up to a step.
 const NOTCH = 40;
+const GESTURE_GAP = 200; // ms
 let wheelAccumulator = 0;
+let lastWheelAt = 0;
 
 function onWheel(e: WheelEvent) {
   e.preventDefault();
+  if (e.timeStamp - lastWheelAt > GESTURE_GAP) wheelAccumulator = 0;
+  lastWheelAt = e.timeStamp;
   wheelAccumulator += e.deltaY;
   if (Math.abs(wheelAccumulator) < NOTCH) return;
   const direction = wheelAccumulator < 0 ? 1 : -1; // wheel up = louder

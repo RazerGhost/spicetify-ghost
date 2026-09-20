@@ -63,3 +63,25 @@ html.ghost-tinted {
 html.ghost .Root {
   --panel-gap: var(--ghost-gap) !important;
 }
+
+/* Keyboard focus on Ghost's own controls: one accent ring. :focus-visible, so it
+   shows for keyboard navigation but not after a mouse click. */
+:is(
+    .ghost-round-button,
+    .ghost-switch,
+    .ghost-choice button,
+    .ghost-color,
+    .ghost-settings__reset,
+    .ghost-lyrics-card__title,
+    .ghost-volume
+  ):focus-visible {
+  outline: 2px solid var(--spice-button);
+  outline-offset: 2px;
+}
+
+/* The lyrics scroller is focusable (arrow keys scroll it); its ring goes inside,
+   where its edge mask and the panel's overflow can't cut it off. */
+.ghost-lyrics:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--spice-button) 60%, transparent);
+  outline-offset: -2px;
+}

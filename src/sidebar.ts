@@ -26,13 +26,13 @@ function attach() {
   classObserver.disconnect();
   observed = sidebar;
   if (sidebar) classObserver.observe(sidebar, { attributes: true, attributeFilter: ["class"], subtree: true });
-  update();
 }
 
 export function initSidebarState() {
-  onDomChange(() => {
+  const sync = () => {
     attach();
     update();
-  });
-  attach();
+  };
+  onDomChange(sync);
+  sync();
 }

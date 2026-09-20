@@ -155,5 +155,5 @@ export async function romanizeJapanese(lines: string[]): Promise<string[]> {
   return lines.map((line) => romanizeTokens(t.tokenize(line)));
 }
 
-/** Exported for tests (the tokenizer itself needs the browser loader). */
+/** Exported for test/romanize.test.mjs (the tokenizer itself needs the browser loader). */
 export const _romanizeTokens = romanizeTokens;

@@ -12,8 +12,11 @@ import { hasHangul, romanizeKorean } from "./korean";
 type Options = { japanese: boolean; chinese: boolean };
 type Romanized = Map<Line, string>;
 
-async function romanize(lyrics: Lyrics, options: Options): Promise<Romanized> {
+/** `complete` is false when a romanizer failed (e.g. its library couldn't
+ *  download) — such a result is shown but not cached, so it's retried. */
+async function romanize(lyrics: Lyrics, options: Options): Promise<{ result: Romanized; complete: boolean }> {
   const result: Romanized = new Map();
+  let complete = true;
   // Kanji and hanzi share code points: if the song has any kana, its kanji
   // lines are Japanese; otherwise lines with hanzi are Chinese.
   const japaneseSong = lyrics.lines.some((l) => hasKana(l.text));
@@ -34,6 +37,7 @@ async function romanize(lyrics: Lyrics, options: Options): Promise<Romanized> {
       const out = await run(lines.map((l) => l.text));
       out.forEach((r, i) => result.set(lines[i], r));
     } catch (err) {
+      complete = false;
       console.warn(`[ghost] ${what} romanization unavailable`, err);
     }
   };
@@ -42,7 +46,7 @@ async function romanize(lyrics: Lyrics, options: Options): Promise<Romanized> {
 
   // Nothing to show when romanizing changed nothing (e.g. English lines).
   for (const [line, roman] of result) if (roman.trim() === line.text.trim()) result.delete(line);
-  return result;
+  return { result, complete };
 }
 
 const cache = new WeakMap<Lyrics, Map<string, Promise<Romanized>>>();
@@ -52,7 +56,12 @@ function romanizeCached(lyrics: Lyrics, options: Options): Promise<Romanized> {
   if (!perOptions) cache.set(lyrics, (perOptions = new Map()));
   const key = `${options.japanese}|${options.chinese}`;
   let pending = perOptions.get(key);
-  if (!pending) perOptions.set(key, (pending = romanize(lyrics, options)));
+  if (!pending) {
+    const run = romanize(lyrics, options);
+    perOptions.set(key, (pending = run.then((r) => r.result)));
+    const entries = perOptions;
+    run.then((r) => !r.complete && entries.delete(key));
+  }
   return pending;
 }
 

@@ -1,7 +1,8 @@
 // Shared hooks for the lyrics page, the now-playing card and fullscreen.
 
 import { useEffect, useState } from "react";
-import { currentTrack, getLyrics } from "./providers";
+import { currentTrack } from "../player";
+import { getLyrics } from "./providers";
 import type { Lyrics, TrackInfo } from "./types";
 
 export function useCurrentTrack(): TrackInfo | null {
@@ -18,19 +19,21 @@ export function useCurrentTrack(): TrackInfo | null {
 export type LyricsState = { status: "loading" } | { status: "none" } | { status: "ready"; lyrics: Lyrics };
 
 export function useLyrics(track: TrackInfo | null): LyricsState {
-  const [state, setState] = useState<LyricsState>({ status: "loading" });
+  // Tagged with the track it belongs to: right after a song change, the render
+  // before the effect runs must not show the previous song's lyrics.
+  const [result, setResult] = useState<{ uri: string; state: LyricsState } | null>(null);
   useEffect(() => {
-    if (!track) return setState({ status: "none" });
+    if (!track) return;
     let cancelled = false;
-    setState({ status: "loading" });
     getLyrics(track).then((lyrics) => {
-      if (!cancelled) setState(lyrics ? { status: "ready", lyrics } : { status: "none" });
+      if (!cancelled) setResult({ uri: track.uri, state: lyrics ? { status: "ready", lyrics } : { status: "none" } });
     });
     return () => {
       cancelled = true;
     };
   }, [track?.uri]);
-  return state;
+  if (!track) return { status: "none" };
+  return result?.uri === track.uri ? result.state : { status: "loading" };
 }
 
 export function usePlaying(): boolean {

@@ -5,46 +5,43 @@
 // buttons (buttons.ts).
 
 import { history } from "../platform";
-import { mount } from "../react";
+import { mountIn } from "../react";
 import { getSettings, watchSettings } from "../settings/store";
+import { onDomChange } from "../watch";
 import { initPlayerButtons } from "./buttons";
 import { LyricsPage } from "./LyricsPage";
 import { initLyricsCard } from "./npvCard";
-
-const ROUTE = "/lyrics";
+import { onLyricsRoute } from "./route";
 
 function initLyricsPage() {
-  let unmount: (() => void) | null = null;
-  let host: HTMLElement | null = null;
+  let page: ReturnType<typeof mountIn> | null = null;
 
   const close = () => {
-    unmount?.();
-    host?.remove();
-    unmount = null;
-    host = null;
+    page?.dispose();
+    page = null;
     document.documentElement.classList.remove("ghost-lyrics-open");
   };
 
   const sync = () => {
-    const wanted = getSettings().lyricsPage && history().location.pathname === ROUTE;
-    const mainView = document.querySelector<HTMLElement>(".Root__main-view");
+    const wanted = getSettings().lyricsPage && onLyricsRoute();
 
     // Re-mount if Spotify re-rendered the main view and dropped our host.
-    if (host && !host.isConnected) close();
+    if (page && !page.host.isConnected) close();
 
-    if (wanted && !unmount && mainView) {
-      host = document.createElement("div");
-      host.id = "ghost-lyrics-host";
-      mainView.append(host);
-      unmount = mount(<LyricsPage />, host);
+    const mainView = wanted && !page ? document.querySelector<HTMLElement>(".Root__main-view") : null;
+    if (mainView) {
+      page = mountIn(mainView, "ghost-lyrics-host", <LyricsPage />);
       document.documentElement.classList.add("ghost-lyrics-open");
-    } else if (!wanted && unmount) {
+    } else if (!wanted && page) {
       close();
     }
   };
 
   history().listen(sync);
   watchSettings((s) => s.lyricsPage, sync);
+  // Spotify can re-render the main view (dropping our host), or not have it yet
+  // when the route changes. Cheap when nothing changed (no DOM query).
+  onDomChange(sync);
   sync();
 }
 

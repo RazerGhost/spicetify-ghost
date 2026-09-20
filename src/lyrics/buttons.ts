@@ -8,10 +8,11 @@ import { interceptClick } from "../intercept";
 import { history } from "../platform";
 import { getSettings } from "../settings/store";
 import { openFullscreen } from "./fullscreen";
+import { onLyricsRoute } from "./route";
 
 export function initPlayerButtons() {
   interceptClick('[data-testid="lyrics-button"]', () => {
-    if (!getSettings().lyricsPage || history().location.pathname !== "/lyrics") return false;
+    if (!getSettings().lyricsPage || !onLyricsRoute()) return false;
     history().goBack();
     return true;
   });

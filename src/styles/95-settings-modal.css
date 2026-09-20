@@ -4,6 +4,7 @@
   display: grid;
   gap: 24px;
   padding-bottom: 8px;
+  container-type: inline-size; /* rows adapt to the modal's width, below */
 }
 
 .ghost-settings h3 {
@@ -31,6 +32,43 @@
 
 .ghost-settings__row--url {
   grid-template-columns: 1fr 272px;
+}
+
+.ghost-settings__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* What a setting does, always visible (was a hover-only tooltip). */
+.ghost-settings__hint {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--spice-subtext);
+}
+
+/* Narrow modal (e.g. Spotify on half the screen): wide controls go under
+   their label instead of squeezing it. */
+@container (max-width: 560px) {
+  .ghost-settings__row--slider {
+    grid-template-columns: minmax(0, 1fr) 64px;
+    row-gap: 4px;
+  }
+
+  .ghost-settings__row--url,
+  .ghost-settings__row--choice {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  :is(.ghost-settings__row--slider, .ghost-settings__row--url, .ghost-settings__row--choice) > .ghost-settings__label {
+    grid-column: 1 / -1;
+  }
+
+  .ghost-settings__row--choice .ghost-choice {
+    justify-self: start;
+  }
 }
 
 .ghost-choice {

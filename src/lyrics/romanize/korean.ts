@@ -47,7 +47,7 @@ const FINAL: [string, [string, string]][] = [
   ["p", ["", "p"]], // ㅍ
   ["t", ["", ""]], // ㅎ (drops before a vowel)
 ];
-const F = { h: 27 } as const;
+const F = { ng: 21, j: 22, h: 27 } as const;
 
 type Syllable = { initial: number; vowel: number; final: number };
 
@@ -77,7 +77,7 @@ function romanizeRun(run: string): string {
     }
 
     // Liaison: final consonant moves onto a following silent ㅇ.
-    if (next.initial === SILENT_INITIAL && final !== 21) {
+    if (next.initial === SILENT_INITIAL && final !== F.ng) {
       const [stay, move] = FINAL[final][1];
       out += stay;
       carriedOnset = move;
@@ -92,7 +92,8 @@ function romanizeRun(run: string): string {
       coda = "";
       onset = { [I.g]: "k", [I.d]: "t", [I.j]: "ch" }[next.initial]!;
     } else if (next.initial === I.h && ["k", "t", "p"].includes(coda)) {
-      onset = coda === "t" && final === 22 ? "ch" : coda;
+      // ㅈ+ㅎ → ch; other t-finals (ㄷ ㅅ ㅆ ㅊ ㅌ) + ㅎ → t.
+      onset = final === F.j ? "ch" : coda;
       coda = "";
     }
     // Nasalisation: k/t/p before ㄴ/ㅁ → ng/n/m.

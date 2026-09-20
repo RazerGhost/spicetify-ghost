@@ -96,7 +96,10 @@ html.ghost-animated .ghost-bg__layer::after {
   animation: ghost-spin 60s linear infinite;
 }
 
-html.ghost-animated .ghost-bg__layer.ghost-active {
+/* Both layers keep turning (not only the active one): when a song changes, the
+   outgoing layer fades out over --ghost-fade, and dropping its animation then
+   made it snap back to 0° mid-fade. Both start together, so they stay aligned. */
+html.ghost-animated .ghost-bg__layer {
   animation: ghost-spin 120s linear infinite;
 }
 

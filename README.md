@@ -15,7 +15,9 @@ plain CSS, and the JS (~37 KB) uses Spotify's own React instead of bundling one.
 - **Lyrics** — replaces Spotify's lyrics page. Word-synced lyrics from the
   [AMLL TTML DB](https://github.com/amll-dev/amll-ttml-db) (duets, background vocals),
   otherwise Spotify's own lyrics, otherwise [LRCLIB](https://lrclib.net). Also a
-  fullscreen view (Spotify's fullscreen button) and a card in the now-playing view.
+  fullscreen view (Spotify's fullscreen button) — the whole screen when Spotify is
+  maximised, just Spotify's window when it isn't (e.g. split-screen) — and a card in
+  the now-playing view.
 - **Player** — volume percentage (click to type a value, scroll over the slider to
   fine-tune), floating player bar.
 - **Spicetify Marketplace** styled to match.

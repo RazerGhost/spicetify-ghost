@@ -1,3 +1,4 @@
+import { initAccent } from "./accent";
 import { initBackground } from "./background";
 import { applySettings } from "./settings/store";
 import { SettingsPanel } from "./settings/Panel";
@@ -12,6 +13,7 @@ export function start() {
   document.documentElement.classList.add("ghost");
   applySettings();
   initBackground();
+  initAccent();
   initWindowControls();
   initVolume();
   initLyrics();

@@ -120,12 +120,3 @@
   justify-content: center;
   gap: 12px;
 }
-
-.ghost-pip__play {
-  background: var(--spice-text);
-  color: var(--spice-main);
-}
-
-.ghost-pip__play:hover {
-  background: var(--spice-button);
-}
