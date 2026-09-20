@@ -67,7 +67,7 @@ for (const file of walk(join(SRC, "styles"), /\.css$/)) {
 }
 
 // className="…" in TSX, and classes in querySelector(All)/closest/matches/
-// interceptClick("…") selectors in TS/TSX.
+// interceptClick("…") selectors and SELECTOR_CONSTANTS in TS/TSX.
 for (const file of walk(SRC, /\.tsx?$/)) {
   const code = readFileSync(file, "utf8");
   const from = relative(SRC, file);
@@ -75,7 +75,12 @@ for (const file of walk(SRC, /\.tsx?$/)) {
     for (const c of list.split(/\s+/)) add(c, "class", from);
   // `?.` allowed before the call; the string ends at the same quote it opened with,
   // so '[data-testid="x"]' is read whole.
-  for (const [, , selector] of code.matchAll(/(?:querySelector(?:All)?|closest|matches|interceptClick)(?:<[^>]*>)?(?:\?\.)?\(\s*(["'`])(.*?)\1/g)) {
+  const selectors = [
+    ...code.matchAll(/(?:querySelector(?:All)?|closest|matches|interceptClick)(?:<[^>]*>)?(?:\?\.)?\(\s*(["'`])(.*?)\1/g),
+    // Selectors kept in constants, e.g. const BAR = ".main-nowPlayingBar-volumeBar".
+    ...code.matchAll(/\bconst [A-Z][A-Z0-9_]*\s*=\s*(["'`])([.#[].*?)\1/g),
+  ];
+  for (const [, , selector] of selectors) {
     for (const [, c] of selector.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) add(c, "class", from);
     for (const [, , v] of selector.matchAll(/\[(data-testid|data-encore-id)[~|^$*]?=["']?([^"'\]]+)/g)) add(v, "attr", from);
   }

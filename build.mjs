@@ -41,6 +41,17 @@ async function writeAtomic(path, contents) {
   await rename(`${path}.tmp`, path);
 }
 
+/** @type {esbuild.Plugin} */
+const atomicOutput = {
+  name: "atomic-output",
+  setup(build) {
+    // With write: false, esbuild hands the files over instead of writing them.
+    build.onEnd(async (result) => {
+      for (const file of result.outputFiles ?? []) await writeAtomic(file.path, file.contents);
+    });
+  },
+};
+
 async function buildCss() {
   const files = (await readdir(STYLES)).filter((f) => f.endsWith(".css")).sort();
   const parts = await Promise.all(files.map((f) => readFile(`${STYLES}/${f}`, "utf8")));
@@ -64,7 +75,8 @@ const options = {
   legalComments: "none",
   define: { __DEV__: String(dev) },
   logLevel: "info",
-  plugins: [spicetifyGlobals],
+  write: false, // atomicOutput writes theme.js
+  plugins: [spicetifyGlobals, atomicOutput],
 };
 
 await buildStatic();

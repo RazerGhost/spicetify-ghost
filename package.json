@@ -8,11 +8,13 @@
     "build": "node build.mjs",
     "dev": "node build.mjs --dev",
     "typecheck": "tsc --noEmit",
+    "test": "node scripts/test.mjs",
     "check": "node scripts/check-selectors.mjs"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
     "esbuild": "^0.25.0",
+    "linkedom": "^0.18.13",
     "typescript": "^5.8.0"
   }
 }
