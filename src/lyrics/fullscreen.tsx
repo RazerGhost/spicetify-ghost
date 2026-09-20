@@ -5,9 +5,15 @@
 //     the screen next to another app).
 //   - "auto" (default): "screen" when Spotify is maximised, else "window".
 // Esc or the ✕ button closes it either way.
+//
+// While the view is only filling the window, <html> also carries
+// .ghost-fullscreen-window: Windows draws the minimise / maximise / close
+// buttons over the top-right of the window (they take the click before the page
+// does), so the ✕ moves out of that corner — see 61-lyrics-fullscreen.css.
 
 import { mountIn } from "../react";
 import { getSettings } from "../settings/store";
+import { forceHideWindowButtons } from "../windowControls";
 import { FullscreenView } from "./FullscreenView";
 
 let close: (() => void) | null = null;
@@ -26,7 +32,12 @@ function wantsScreen() {
 export function openFullscreen() {
   if (close) return;
 
-  document.documentElement.classList.add("ghost-fullscreen");
+  const root = document.documentElement;
+  root.classList.add("ghost-fullscreen");
+  // Until (and unless) real fullscreen starts, the native window buttons are
+  // drawn over us; hide them and keep our ✕ out of their corner meanwhile.
+  root.classList.add("ghost-fullscreen-window");
+  forceHideWindowButtons(true);
   const view = mountIn(document.body, "ghost-fs-host", <FullscreenView onClose={closeFullscreen} />);
 
   const onKey = (e: KeyboardEvent) => {
@@ -45,7 +56,10 @@ export function openFullscreen() {
   if (wantsScreen() && !document.fullscreenElement) {
     document.documentElement
       .requestFullscreen?.()
-      .then(() => (entered = true))
+      .then(() => {
+        entered = true;
+        root.classList.remove("ghost-fullscreen-window");
+      })
       .catch(() => {
         // Not allowed (e.g. no user gesture): stay as an in-window overlay.
       });
@@ -55,7 +69,8 @@ export function openFullscreen() {
     document.removeEventListener("keydown", onKey);
     document.removeEventListener("fullscreenchange", onFullscreenChange);
     view.dispose();
-    document.documentElement.classList.remove("ghost-fullscreen");
+    root.classList.remove("ghost-fullscreen", "ghost-fullscreen-window");
+    forceHideWindowButtons(false);
     if (entered && document.fullscreenElement) document.exitFullscreen().catch(() => {});
   };
 }

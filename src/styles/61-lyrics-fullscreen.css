@@ -45,6 +45,15 @@ html.ghost-fullscreen .Root {
   right: 24px;
 }
 
+/* Filling the window only: Windows draws the minimise / maximise / close
+   buttons over the top-right corner and they take the click before the page
+   does — clicking a ✕ there quits Spotify instead of closing this view. Keep
+   ours on the left, away from them. */
+html.ghost-fullscreen-window .ghost-fs__close {
+  right: auto;
+  left: 24px;
+}
+
 .ghost-fs--idle :is(.ghost-fs__close, .ghost-fs__controls, .ghost-progress) {
   opacity: 0;
 }
@@ -192,6 +201,11 @@ html.ghost-fullscreen .Root {
   .ghost-fs__close {
     top: 16px;
     right: 16px;
+  }
+
+  html.ghost-fullscreen-window .ghost-fs__close {
+    right: auto;
+    left: 16px;
   }
 
   .ghost-lyrics--fullscreen {

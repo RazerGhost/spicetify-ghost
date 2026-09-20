@@ -61,8 +61,19 @@ function findNativeApi(): NativeApi | null {
   return (nativeApi = found);
 }
 
+/** Set while a view covers the window (Ghost's fullscreen filling the window):
+ *  the native buttons are drawn over the page and would take clicks from it. */
+let forcedHidden = false;
+
 function applyButtonVisibility() {
-  findNativeApi()?.setWindowButtonsVisibility(!getSettings().hideWindowButtons).catch(() => {});
+  const hidden = forcedHidden || getSettings().hideWindowButtons;
+  findNativeApi()?.setWindowButtonsVisibility(!hidden).catch(() => {});
+}
+
+/** Hide the native window buttons while `hidden`, then go back to the setting. */
+export function forceHideWindowButtons(hidden: boolean) {
+  forcedHidden = hidden;
+  applyButtonVisibility();
 }
 
 function apply() {
