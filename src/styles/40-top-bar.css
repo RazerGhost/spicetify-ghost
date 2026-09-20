@@ -28,24 +28,21 @@ html.ghost.ghost-nav-glass .main-globalNav-contentRight {
   margin-inline-end: 0 !important;
 }
 
-/* Window buttons hidden (windowControls.ts): nothing to make room for on the
-   right, so the pill runs the full width and the reserved space goes. */
-html.ghost.ghost-no-window-buttons .Root__globalNav {
-  margin-inline-end: 0 !important;
-}
+/* Window buttons hidden (windowControls.ts) changes nothing about the layout:
+   hiding them only stops Windows painting them — the window still takes clicks
+   where they were (clicking the empty corner minimises Spotify), so the bar
+   stops before that area either way, as above.
 
-html.ghost.ghost-no-window-buttons .main-globalNav-contentRightSpacer {
-  display: none;
-}
-
-/* The same switch also hides the native ⋯ menu, so drop its placeholder (and
-   the glass circle drawn on it) too. */
+   Only the min/max/close area keeps taking clicks, though — the ⋯ menu's goes
+   away with it, so its spacer (and the glass circle Ghost paints on it) can go,
+   letting the left-hand buttons move over. The right-hand spacer only matters
+   when the bar isn't already stopping short of the buttons. */
 html.ghost.ghost-no-window-buttons .main-globalNav-historyButtonsSpacer {
   display: none;
 }
 
-html.ghost.ghost-no-window-buttons .main-globalNav-contentRight {
-  margin-inline-end: 0 !important;
+html.ghost.ghost-no-window-buttons:not(.ghost-nav-glass) .main-globalNav-contentRightSpacer {
+  display: block !important;
 }
 
 /* One style for every round icon button in the bar: history arrows, home,
@@ -140,6 +137,22 @@ html.ghost .custom-navlinks-scrollable_container div[role="presentation"] {
 html.ghost .Root__globalNav .main-globalNav-navLinkActive {
   color: var(--spice-button) !important;
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--spice-button) 60%, transparent);
+}
+
+/* Spotify centres the home button and the search field together, which leaves
+   the field itself ~22px right of the window centre — visible against the
+   centred player below. Offset the group by the home button's footprint
+   (36px wide + its 8px margin) so the field lines up with the player. */
+html.ghost .main-globalNav-searchContainer {
+  margin-inline-end: 44px;
+}
+
+/* The glass bar stops before the window buttons (the rule above, whether or not
+   they're painted), so its centre — and the field with it — sits ~98px left of
+   the player. A matching margin on the other side puts the field back on the
+   window centre. */
+html.ghost.ghost-nav-glass .main-globalNav-searchContainer {
+  margin-inline-start: calc(135px / (var(--zoom-level, 100) / 100));
 }
 
 /* Search: glass field with an accent focus ring (the input itself only has a

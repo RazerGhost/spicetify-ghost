@@ -130,7 +130,7 @@ export const SECTIONS: { title: string; controls: ControlDef[] }[] = [
       { kind: "toggle", key: "navAutoHide", label: "Auto-hide top bar", hint: "Slides away; hover the top edge to bring it back." },
       { kind: "toggle", key: "slimRail", label: "Slim collapsed library", hint: "Narrower library rail when the library is collapsed." },
       { kind: "toggle", key: "libraryAutoHide", label: "Auto-hide library", hint: "Slides away; hover the left edge to bring it back." },
-      { kind: "toggle", key: "hideWindowButtons", label: "Hide window buttons (Windows)", hint: "Hides minimise / maximise / close. Use Win+↓ to minimise, Win+↑ or double-click the top bar to maximise, Alt+F4 to close." },
+      { kind: "toggle", key: "hideWindowButtons", label: "Hide window buttons (Windows)", hint: "Stops Windows drawing minimise / maximise / close over the top bar. They still work where they were, invisibly — or use Win+↓, Win+↑ and Alt+F4." },
     ],
   },
   {
