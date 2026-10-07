@@ -6,17 +6,25 @@ html.ghost .Root__top-container {
   background: transparent !important;
 }
 
+/* Spotify 1.3.3 moved the layout regions to new hashed classes that Spicetify
+   (2.45.3) doesn't map to Root__* yet. Each region is matched by its readable
+   name (older Spotify, or once Spicetify maps it) or by a stable hook:
+     main view      .Root__main-view       | #main-view
+     library        .Root__nav-bar         | #Desktop_LeftSidebar_Id
+     player bar     .Root__now-playing-bar | the grid item holding [data-testid=now-playing-bar]
+     right sidebar  .Root__right-sidebar   | #main-view + div (always rendered, xpui-modules.js) */
+
 /* Outer chrome (top nav, now-playing bar) floats directly on the art. */
 html.ghost .Root__globalNav,
-html.ghost .Root__now-playing-bar {
+html.ghost :is(.Root__now-playing-bar, .Root__top-container > :has(> [data-testid="now-playing-bar"])) {
   background-color: transparent !important;
 }
 
-/* The three main panels become translucent glass. */
-html.ghost .Root__nav-bar,
-html.ghost .Root__main-view,
-html.ghost .Root__right-sidebar > *,
-html.ghost .Root__right-sidebar-peek {
+/* The three main panels become translucent glass. The right sidebar's children
+   are its peek (the panel) and, while expanded, a resize bar in the gap. */
+html.ghost :is(.Root__nav-bar, #Desktop_LeftSidebar_Id),
+html.ghost :is(.Root__main-view, #main-view),
+html.ghost :is(.Root__right-sidebar, #main-view + div) > :not(.LayoutResizer__resize-bar) {
   background-color: var(--ghost-panel) !important;
   border-radius: var(--ghost-radius) !important;
   box-shadow: inset 0 0 0 1px var(--ghost-border);
@@ -24,9 +32,9 @@ html.ghost .Root__right-sidebar-peek {
 }
 
 /* Inside panels, Spotify paints --background-base again; let the panel show. */
-html.ghost .Root__nav-bar,
-html.ghost .Root__main-view,
-html.ghost .Root__right-sidebar {
+html.ghost :is(.Root__nav-bar, #Desktop_LeftSidebar_Id),
+html.ghost :is(.Root__main-view, #main-view),
+html.ghost :is(.Root__right-sidebar, #main-view + div) {
   --background-base: transparent;
 }
 
@@ -34,7 +42,7 @@ html.ghost .Root__right-sidebar {
    to the page's extracted colour (top bar, home filter-chips bar, entity header,
    now-playing view). Matching the inline style keeps working when class hashes
    change. Sticky bars (they fade in on scroll) get neutral glass instead of colour. */
-html.ghost .Root__main-view [style*="--background-base"]:not([style*="--background-base: transparent"]) {
+html.ghost :is(.Root__main-view, #main-view) [style*="--background-base"]:not([style*="--background-base: transparent"]) {
   --background-base: var(--ghost-sticky) !important;
 }
 
@@ -42,18 +50,24 @@ html.ghost .NowPlayingView[style*="--background-base"] {
   --background-base: transparent !important;
 }
 
-html.ghost .main-topBar-background {
+/* Top bar colour layer: .main-topBar-background, on 1.3.3 only a hashed class —
+   it's the top bar's first child. */
+html.ghost :is(.main-topBar-background, [data-testid="topbar"] > :first-child) {
   border-radius: var(--ghost-radius) var(--ghost-radius) 0 0 !important;
 }
 
-/* Extra 60% black layer over the top bar. */
-html.ghost .main-topBar-overlay {
+/* Extra 60% black layer over the top bar: its own div before 1.3.3, now the
+   colour layer's ::after. */
+html.ghost .main-topBar-overlay,
+html.ghost [data-testid="topbar"] > :first-child::after {
   display: none;
 }
 
 /* Playlist/artist/album header: colour block + gradient from
-   --background-base-min-contrast (the grey/orange wash). */
-html.ghost .main-entityHeader-backgroundColor {
+   --background-base-min-contrast (the grey/orange wash). On 1.3.3 an empty
+   first child of the header (hashed class). */
+html.ghost .main-entityHeader-backgroundColor,
+html.ghost [data-testid="entity-header"] > :first-child:empty {
   display: none;
 }
 
@@ -63,18 +77,20 @@ html.ghost .main-entityHeader-backgroundColor {
    background behind play/follow (all hashed classes, found with ghost.pick()).
    One structural rule covers them all. background:none rather than display:none,
    so nothing in the layout can shift. */
-html.ghost .Root__main-view [style*="background-color"]:empty {
+html.ghost :is(.Root__main-view, #main-view) [style*="background-color"]:empty {
   background: none !important;
 }
 
 /* The banner-less artist header also has an empty gradient/noise layer next to
    its colour block, without an inline colour of its own. */
-html.ghost .main-entityHeader-container > [style*="background-color"] ~ :empty {
+html.ghost :is(.main-entityHeader-container, [data-testid="entity-header"]) > [style*="background-color"] ~ :empty {
   display: none;
 }
 
-/* Gradient behind the play/follow action bar. */
-html.ghost .playlist-playlist-actionBarBackground-background {
+/* Gradient behind the play/follow action bar. On 1.3.3 an empty sibling right
+   after the header, coloured through an inline --background-base (hashed class). */
+html.ghost .playlist-playlist-actionBarBackground-background,
+html.ghost [data-testid="entity-header"] + [style*="--background-base"]:empty {
   background: none !important;
 }
 

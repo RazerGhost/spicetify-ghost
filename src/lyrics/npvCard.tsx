@@ -1,6 +1,7 @@
 // Compact lyrics card in the now-playing view (right sidebar), placed right after
 // the cover/canvas block (.main-nowPlayingView-nowPlayingWidget inside
-// .main-nowPlayingView-panel, a.k.a. data-testid="NPV_Panel_OpenDiv").
+// .main-nowPlayingView-panel, a.k.a. data-testid="NPV_Panel_OpenDiv"; on Spotify
+// 1.3.3 the widget is only a hashed class, the panel's first child).
 // Hidden when the song has no lyrics, and while the full lyrics page is open.
 // Click the header to open the full page.
 
@@ -38,7 +39,9 @@ export function initLyricsCard() {
 
   const place = () => {
     const s = getSettings();
-    const widget = document.querySelector(".main-nowPlayingView-panel > .main-nowPlayingView-nowPlayingWidget");
+    const widget = document.querySelector(
+      ".main-nowPlayingView-panel > .main-nowPlayingView-nowPlayingWidget, [data-testid='NPV_Panel_OpenDiv'] > :first-child",
+    );
     if (!s.lyricsPage || !s.lyricsCard || !widget || onLyricsRoute()) {
       unmount?.();
       unmount = null;

@@ -1,6 +1,6 @@
 // Ghost Lyrics: replaces Spotify's lyrics page. Spotify's own lyrics button keeps
 // working — it navigates to /lyrics (route in xpui-modules.js); when that route is
-// active we mount our view over .Root__main-view and hide Spotify's underneath.
+// active we mount our view over the main view (#main-view) and hide Spotify's underneath.
 // Also sets up the now-playing card and takes over Spotify's lyrics/fullscreen
 // buttons (buttons.ts).
 
@@ -28,7 +28,7 @@ function initLyricsPage() {
     // Re-mount if Spotify re-rendered the main view and dropped our host.
     if (page && !page.host.isConnected) close();
 
-    const mainView = wanted && !page ? document.querySelector<HTMLElement>(".Root__main-view") : null;
+    const mainView = wanted && !page ? document.querySelector<HTMLElement>(".Root__main-view, #main-view") : null;
     if (mainView) {
       page = mountIn(mainView, "ghost-lyrics-host", <LyricsPage />);
       document.documentElement.classList.add("ghost-lyrics-open");

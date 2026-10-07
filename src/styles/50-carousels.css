@@ -5,20 +5,25 @@
    invisible or dark bands on glass. Instead: drop the overlays and mask the
    scrolling viewport (.search-searchCategory-categoryGrid, where Spotify's own
    "mask" edge mode goes) so cards stop at the content column with a short fade.
-   The ‹ › buttons (.search-searchCategory-carousel) are a sibling, so they stay. */
-html.ghost .search-searchCategory-contentArea {
+   The ‹ › buttons (.search-searchCategory-carousel) are a sibling, so they stay.
+
+   Spotify 1.3.3 dropped those names (hashed classes, not mapped by Spicetify
+   2.45.3). The carousel root is the only element Spotify gives an inline
+   --scrollAnimationRangeStart (xpui-modules.js); the viewport is its first
+   child, the buttons' container its second. */
+html.ghost :is(.search-searchCategory-contentArea, [style*="--scrollAnimationRangeStart"]) {
   --ghost-bleed-start: max(0px, calc(-1 * var(--margin-start, 0px)));
   --ghost-bleed-end: max(0px, calc(-1 * var(--margin-end, 0px)));
 }
 
-html.ghost .search-searchCategory-contentArea::before,
-html.ghost .search-searchCategory-contentArea::after {
+html.ghost :is(.search-searchCategory-contentArea, [style*="--scrollAnimationRangeStart"])::before,
+html.ghost :is(.search-searchCategory-contentArea, [style*="--scrollAnimationRangeStart"])::after {
   display: none;
 }
 
 /* The ‹ › buttons' container spans the full (bleeding) width; pull it in to
    the visible area so the buttons sit where the cards start and end. */
-html.ghost .search-searchCategory-carousel {
+html.ghost :is(.search-searchCategory-carousel, [style*="--scrollAnimationRangeStart"] > :nth-child(2)) {
   inset-inline: var(--ghost-bleed-start) var(--ghost-bleed-end);
 }
 
@@ -26,7 +31,7 @@ html.ghost .search-searchCategory-carousel {
    and hover. clip-path also clips hit-testing, so cut at the exact point where
    the fade reaches transparent. Negative vertical insets leave room for card
    shadows / hover lift. */
-html.ghost .search-searchCategory-categoryGrid {
+html.ghost :is(.search-searchCategory-categoryGrid, [style*="--scrollAnimationRangeStart"] > :first-child) {
   mask-image: linear-gradient(
     to right,
     transparent calc(var(--ghost-bleed-start) - 20px),

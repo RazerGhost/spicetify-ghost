@@ -3,12 +3,13 @@
    theme variable, so they show up as dark blocks on the glass panel. */
 
 /* Over the canvas/cover: keep only a light top fade for the header text; drop
-   the dark band Spotify adds at the bottom. */
-html.ghost .main-nowPlayingView-canvasVisualEnhancement::before {
+   the dark band Spotify adds at the bottom. On 1.3.3 the overlay is a hashed
+   class, right after the cover/canvas itself. */
+html.ghost :is(.main-nowPlayingView-canvasVisualEnhancement, [data-testid="track-visual-enhancement"] + [aria-hidden])::before {
   background: linear-gradient(rgba(0, 0, 0, 0.45), transparent 30%) !important;
 }
 
-html.ghost .main-nowPlayingView-canvasVisualEnhancement::after {
+html.ghost :is(.main-nowPlayingView-canvasVisualEnhancement, [data-testid="track-visual-enhancement"] + [aria-hidden])::after {
   background: none !important;
 }
 
@@ -19,7 +20,8 @@ html.ghost .NowPlayingView video {
   mask-image: linear-gradient(#000 55%, transparent 100%);
 }
 
-/* Dark block behind the track title ("Midnight"). */
-html.ghost .main-nowPlayingView-contextItemInfo::before {
+/* Dark block behind the track title ("Midnight"). On 1.3.3 a hashed class: the
+   block holding the minimised cover. */
+html.ghost :is(.main-nowPlayingView-contextItemInfo, :has(> [data-testid="minimized-track-visual-enhancement"]))::before {
   background: none !important;
 }

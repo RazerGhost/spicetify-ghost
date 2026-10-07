@@ -11,6 +11,13 @@
   box-shadow: inset 0 0 0 1px var(--ghost-border);
 }
 
+/* Spotify's own "Lyrics preview" card is a later sibling in the same panel
+   (dwp-panel-section.js). Hide it while ours shows lyrics; when ours renders
+   nothing (no synced lyrics) the host is empty and Spotify's stays. */
+.ghost-lyrics-card-host:has(> .ghost-lyrics-card) ~ [data-testid="lyrics-npv-section"] {
+  display: none;
+}
+
 .ghost-lyrics-card__header {
   display: flex;
   align-items: center;

@@ -1,5 +1,5 @@
 /* --- Ghost Lyrics (src/lyrics) ---------------------------------------------
-   Mounted over .Root__main-view on /lyrics; Spotify's own lyrics view stays
+   Mounted over the main view (#main-view) on /lyrics; Spotify's own lyrics view stays
    mounted underneath but hidden. Per-frame state comes from LyricsView.tsx as
    data-state (past/active/future), --ghost-d (distance from the current line,
    0–5) and --ghost-p (0–1 progress of a word or interlude). */
@@ -11,7 +11,7 @@
 
 /* content-visibility (not just visibility) so Spotify's hidden lyrics view
    underneath isn't laid out or painted while ours covers it. */
-html.ghost-lyrics-open .Root__main-view .main-view-container {
+html.ghost-lyrics-open :is(.Root__main-view, #main-view) .main-view-container {
   visibility: hidden;
   content-visibility: hidden;
 }

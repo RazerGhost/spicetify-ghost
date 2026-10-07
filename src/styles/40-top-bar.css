@@ -1,6 +1,13 @@
 /* --- Top bar ---------------------------------------------------------------
    Spotify: .Root__globalNav has padding = gap and margin = -gap, so it bleeds to
-   the window edges. Glass mode turns it into a regular panel instead. */
+   the window edges. Glass mode turns it into a regular panel instead.
+
+   Spotify 1.3.3 dropped some readable names here and Spicetify 2.45.3 doesn't
+   map them back; each is matched by its old name or by structure:
+     spacers (empty divs)  .main-globalNav-contentRightSpacer   = last child of .main-globalNav-contentRight
+                           .main-globalNav-historyButtonsSpacer = first child of .main-globalNav-historyButtonsWrapper
+     search                .main-globalNav-searchContainer      = home button + field, around form[role=search]
+                           .main-globalNav-searchInputContainer = form[role=search] */
 
 html.ghost.ghost-nav-glass .Root__globalNav,
 html.ghost.ghost-nav-autohide .Root__globalNav {
@@ -20,7 +27,7 @@ html.ghost.ghost-nav-glass .Root__globalNav {
   margin-inline-end: calc(135px / (var(--zoom-level, 100) / 100)) !important;
 }
 
-html.ghost.ghost-nav-glass .main-globalNav-contentRightSpacer {
+html.ghost.ghost-nav-glass :is(.main-globalNav-contentRightSpacer, .main-globalNav-contentRight > div:empty:last-child) {
   display: none;
 }
 
@@ -37,11 +44,11 @@ html.ghost.ghost-nav-glass .main-globalNav-contentRight {
    away with it, so its spacer (and the glass circle Ghost paints on it) can go,
    letting the left-hand buttons move over. The right-hand spacer only matters
    when the bar isn't already stopping short of the buttons. */
-html.ghost.ghost-no-window-buttons .main-globalNav-historyButtonsSpacer {
+html.ghost.ghost-no-window-buttons :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child) {
   display: none;
 }
 
-html.ghost.ghost-no-window-buttons:not(.ghost-nav-glass) .main-globalNav-contentRightSpacer {
+html.ghost.ghost-no-window-buttons:not(.ghost-nav-glass) :is(.main-globalNav-contentRightSpacer, .main-globalNav-contentRight > div:empty:last-child) {
   display: block !important;
 }
 
@@ -85,11 +92,11 @@ html.ghost .Root__globalNav
    which the native button is drawn over. Paint the same round glass circle on
    that spacer so it sits behind the native dots. (No hover: the native button
    gets the mouse, not the page.) */
-html.ghost .main-globalNav-historyButtonsSpacer {
+html.ghost :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child) {
   position: relative;
 }
 
-html.ghost .main-globalNav-historyButtonsSpacer::before {
+html.ghost :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child)::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -104,12 +111,12 @@ html.ghost .main-globalNav-historyButtonsSpacer::before {
 
 /* The buttons are now 36px, but their wrappers keep Spotify's 48px height and
    don't centre (e.g. home next to the search field). Centre them. */
-html.ghost .main-globalNav-searchContainer,
+html.ghost :is(.main-globalNav-searchContainer, .Root__globalNav :has(> * > form[role="search"])),
 html.ghost .Root__globalNav :has(> .main-globalNav-link-icon) {
   align-items: center;
 }
 
-html.ghost .Root__globalNav :has(> .main-globalNav-link-icon):not(.main-globalNav-searchContainer) {
+html.ghost .Root__globalNav :has(> .main-globalNav-link-icon):not(.main-globalNav-searchContainer, :has(> * > form[role="search"])) {
   display: flex;
 }
 
@@ -143,7 +150,7 @@ html.ghost .Root__globalNav .main-globalNav-navLinkActive {
    the field itself ~22px right of the window centre — visible against the
    centred player below. Offset the group by the home button's footprint
    (36px wide + its 8px margin) so the field lines up with the player. */
-html.ghost .main-globalNav-searchContainer {
+html.ghost :is(.main-globalNav-searchContainer, .Root__globalNav :has(> * > form[role="search"])) {
   margin-inline-end: 44px;
 }
 
@@ -151,26 +158,26 @@ html.ghost .main-globalNav-searchContainer {
    they're painted), so its centre — and the field with it — sits ~98px left of
    the player. A matching margin on the other side puts the field back on the
    window centre. */
-html.ghost.ghost-nav-glass .main-globalNav-searchContainer {
+html.ghost.ghost-nav-glass :is(.main-globalNav-searchContainer, .Root__globalNav :has(> * > form[role="search"])) {
   margin-inline-start: calc(135px / (var(--zoom-level, 100) / 100));
 }
 
 /* Search: glass field with an accent focus ring (the input itself only has a
    hashed class, so it's reached through the readable container). */
-html.ghost .main-globalNav-searchInputContainer input {
+html.ghost :is(.main-globalNav-searchInputContainer, .Root__globalNav form[role="search"]) input {
   background: rgba(var(--spice-rgb-text), 0.08) !important;
 }
 
-html.ghost .main-globalNav-searchInputContainer input:hover {
+html.ghost :is(.main-globalNav-searchInputContainer, .Root__globalNav form[role="search"]) input:hover {
   background: rgba(var(--spice-rgb-text), 0.12) !important;
 }
 
-html.ghost .main-globalNav-searchInputContainer input:focus {
+html.ghost :is(.main-globalNav-searchInputContainer, .Root__globalNav form[role="search"]) input:focus {
   background: rgba(var(--spice-rgb-text), 0.12) !important;
   box-shadow: inset 0 0 0 2px var(--spice-button) !important;
 }
 
-html.ghost .main-globalNav-searchInputContainer:focus-within svg {
+html.ghost :is(.main-globalNav-searchInputContainer, .Root__globalNav form[role="search"]):focus-within svg {
   color: var(--spice-button);
 }
 
