@@ -35,21 +35,22 @@ html.ghost.ghost-nav-glass .main-globalNav-contentRight {
   margin-inline-end: 0 !important;
 }
 
-/* Window buttons hidden (windowControls.ts) changes nothing about the layout:
-   hiding them only stops Windows painting them — the window still takes clicks
-   where they were (clicking the empty corner minimises Spotify), so the bar
-   stops before that area either way, as above.
-
-   Only the min/max/close area keeps taking clicks, though — the ⋯ menu's goes
-   away with it, so its spacer (and the glass circle Ghost paints on it) can go,
-   letting the left-hand buttons move over. The right-hand spacer only matters
-   when the bar isn't already stopping short of the buttons. */
-html.ghost.ghost-no-window-buttons :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child) {
-  display: none;
+/* Window buttons hidden (windowControls.ts): the min/max/close and ⋯ areas go
+   away entirely — nothing is painted there and the page gets the clicks. So
+   both spacers (and the glass circle Ghost paints on the left one) go, the
+   right-hand content stops being pulled under the corner, and the glass bar
+   runs the full width. */
+html.ghost.ghost-no-window-buttons :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child),
+html.ghost.ghost-no-window-buttons :is(.main-globalNav-contentRightSpacer, .main-globalNav-contentRight > div:empty:last-child) {
+  display: none !important;
 }
 
-html.ghost.ghost-no-window-buttons:not(.ghost-nav-glass) :is(.main-globalNav-contentRightSpacer, .main-globalNav-contentRight > div:empty:last-child) {
-  display: block !important;
+html.ghost.ghost-no-window-buttons .main-globalNav-contentRight {
+  margin-inline-end: 0 !important;
+}
+
+html.ghost.ghost-nav-glass.ghost-no-window-buttons .Root__globalNav {
+  margin-inline-end: 0 !important;
 }
 
 /* One style for every round icon button in the bar: history arrows, home,
@@ -154,11 +155,11 @@ html.ghost :is(.main-globalNav-searchContainer, .Root__globalNav :has(> * > form
   margin-inline-end: 44px;
 }
 
-/* The glass bar stops before the window buttons (the rule above, whether or not
-   they're painted), so its centre — and the field with it — sits ~98px left of
-   the player. A matching margin on the other side puts the field back on the
-   window centre. */
-html.ghost.ghost-nav-glass :is(.main-globalNav-searchContainer, .Root__globalNav :has(> * > form[role="search"])) {
+/* The glass bar stops before the window buttons, so its centre — and the field
+   with it — sits ~98px left of the player. A matching margin on the other side
+   puts the field back on the window centre. (Buttons hidden: the bar is full
+   width and already centred.) */
+html.ghost.ghost-nav-glass:not(.ghost-no-window-buttons) :is(.main-globalNav-searchContainer, .Root__globalNav :has(> * > form[role="search"])) {
   margin-inline-start: calc(135px / (var(--zoom-level, 100) / 100));
 }
 
@@ -212,6 +213,13 @@ html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
 .ghost-topbar-button {
   display: flex;
   align-items: center;
+}
+
+/* topbar.tsx keeps Spicetify's own <button> but hides it with [hidden];
+   Spicetify's `.spicetify-topbar-button > button { display: flex; width: 32px }`
+   overrides the browser's [hidden] rule, leaving an invisible 32px gap. */
+.ghost-topbar-button > button[hidden] {
+  display: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
