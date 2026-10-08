@@ -22,6 +22,8 @@ html.ghost :is(.encore-inverted-set, .encore-inverted-light-set) {
   --essential-bright-accent: color-mix(in oklab, var(--spice-button-active), black 20%);
 }
 
-html.ghost ::selection {
-  background: rgba(var(--spice-rgb-button), 0.35);
-}
+/* No accent-coloured ::selection: an app-wide `::selection` rule made Chromium
+   recompute selection styles for every element on every style recalc, which
+   roughly doubled the cost of each click (measured 2026-10-08 on 1.3.3:
+   context menu ~680 ms to next paint with it, ~440 ms without, ~360 ms with no
+   Ghost CSS at all). */

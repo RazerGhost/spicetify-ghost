@@ -87,10 +87,15 @@ html.ghost :is(.main-entityHeader-container, [data-testid="entity-header"]) > [s
   display: none;
 }
 
-/* Gradient behind the play/follow action bar. On 1.3.3 an empty sibling right
-   after the header, coloured through an inline --background-base (hashed class). */
+/* Gradient behind the play/follow action bar. On 1.3.3 an empty div (hashed
+   class) coloured through an inline --background-base-70, or -20 for the
+   "seamless" variant under picture headers (xpui chunk 59763). Where it sits
+   varies — right after [data-testid=entity-header] on albums, elsewhere on
+   playlists with a picture header — so match the inline variables. Only inside
+   the page content: the artist/playlist banner in .before-scroll-node uses
+   --background-base-70 for its own colour layer. */
 html.ghost .playlist-playlist-actionBarBackground-background,
-html.ghost [data-testid="entity-header"] + [style*="--background-base"]:empty {
+html.ghost .main-view-container__scroll-node :is([style*="--background-base-70"], [style*="--background-base-20"]):empty {
   background: none !important;
 }
 
