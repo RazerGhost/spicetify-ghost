@@ -5,7 +5,7 @@
   "usercss": "user.css",
   "schemes": "color.ini",
   "include": ["https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/dist/theme.js"],
-  "preview": "https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/docs/preview.png",
+  "preview": "https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/docs/screenshots/01-home.jpg",
   "readme": "https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/README.md",
   "authors": [{ "name": "RazerGhost", "url": "https://github.com/RazerGhost" }],
   "tags": ["glass", "blur", "lyrics", "dark"]

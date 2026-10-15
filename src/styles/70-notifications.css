@@ -1,0 +1,24 @@
+/* --- Notifications ------------------------------------------------------ */
+
+/* Spotify's toasts ("Added to Liked Songs.", Spicetify.showNotification) are
+   notistack snackbars whose box carries Encore's light theme, so they render as
+   a white card. Turn them into a dark glass card like the rest of Ghost; the
+   light theme's variables are re-pointed so text and the action link follow. */
+html.ghost .notistack-Snackbar [role="alert"] > .encore-light-theme {
+  --background-base: transparent;
+  --background-elevated-base: transparent;
+  --background-highlight: rgba(var(--spice-rgb-text), 0.08);
+  --text-base: var(--spice-text);
+  --text-subdued: var(--spice-subtext);
+  --text-bright-accent: var(--spice-button);
+  --essential-base: var(--spice-text);
+  --essential-subdued: var(--spice-subtext);
+  --essential-bright-accent: var(--spice-button);
+  background-color: rgb(from var(--spice-main-elevated) r g b / 0.72) !important;
+  color: var(--spice-text) !important;
+  backdrop-filter: blur(24px) saturate(1.4);
+  border-radius: var(--ghost-radius) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--ghost-border),
+    0 8px 24px rgb(0 0 0 / 0.4) !important;
+}

@@ -24,6 +24,20 @@ plain CSS, and the JS (~37 KB) uses Spotify's own React instead of bundling one.
 
 Everything is configurable from the ghost button in the top bar.
 
+## Screenshots
+
+![Home with the now-playing canvas](docs/screenshots/01-home.jpg)
+
+| | |
+| --- | --- |
+| ![Album page](docs/screenshots/02-album.jpg) | ![Synced lyrics page](docs/screenshots/03-lyrics.jpg) |
+| ![Fullscreen lyrics](docs/screenshots/04-fullscreen.jpg) | ![Lyrics card in the now-playing view](docs/screenshots/06-npv-card.jpg) |
+| ![Settings](docs/screenshots/07-settings.jpg) | ![Marketplace](docs/screenshots/08-marketplace.jpg) |
+
+Picture-in-picture lyrics:
+
+![Picture-in-picture lyrics](docs/screenshots/05-pip.jpg)
+
 ## Install
 
 ### Spicetify Marketplace
@@ -143,7 +157,7 @@ Push to `main`. The GitHub Action type-checks, builds and publishes `dist/` to t
 `manifest.json` is what the Marketplace reads (from `main`). It points at the `dist`
 branch for `user.css`, `color.ini` and `theme.js`, which CI rebuilds on every push.
 The Marketplace finds the repo by its `spicetify-themes` GitHub topic and shows
-`docs/preview.png` on the card.
+`docs/screenshots/01-home.jpg` on the card.
 
 ## License
 
