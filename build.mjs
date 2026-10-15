@@ -1,4 +1,5 @@
-// Bundles src/ into dist/ (theme.js, user.css, color.ini).
+// Bundles src/ into dist/ (theme.js, user.css, color.ini, plus LICENSE and
+// docs/dist-README.md as README.md, so the dist branch is a complete drop-in theme).
 // React is NOT bundled: imports of react / react-dom / react/jsx-runtime are
 // redirected to the copies Spotify already ships (Spicetify.React & co).
 // user.css is assembled from src/styles/*.css in file-name order (00-…, 10-…).
@@ -60,7 +61,12 @@ async function buildCss() {
 
 async function buildStatic() {
   await mkdir("dist", { recursive: true });
-  await Promise.all([buildCss(), copyFile("color.ini", "dist/color.ini")]);
+  await Promise.all([
+    buildCss(),
+    copyFile("color.ini", "dist/color.ini"),
+    copyFile("LICENSE", "dist/LICENSE"),
+    copyFile("docs/dist-README.md", "dist/README.md"),
+  ]);
 }
 
 const options = {

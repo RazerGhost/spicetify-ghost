@@ -1,0 +1,12 @@
+{
+  "name": "Ghost",
+  "description": "Lightweight glassy theme with blurred album-art backgrounds and built-in word-synced lyrics.",
+  "branch": "dist",
+  "usercss": "user.css",
+  "schemes": "color.ini",
+  "include": ["https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/dist/theme.js"],
+  "preview": "https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/docs/preview.png",
+  "readme": "https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/README.md",
+  "authors": [{ "name": "RazerGhost", "url": "https://github.com/RazerGhost" }],
+  "tags": ["glass", "blur", "lyrics", "dark"]
+}

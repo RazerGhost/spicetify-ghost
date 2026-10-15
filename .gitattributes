@@ -1,0 +1,2 @@
+# install.sh is piped straight into sh from raw.githubusercontent.com; CRLF breaks it.
+*.sh text eol=lf

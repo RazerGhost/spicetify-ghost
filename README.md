@@ -26,30 +26,64 @@ Everything is configurable from the ghost button in the top bar.
 
 ## Install
 
+### Spicetify Marketplace
+
+Open the Marketplace in Spotify → **Themes** → search for **Ghost** → **Install**.
+Pick a colour scheme (`dark`, `oled`) in the Marketplace settings. The Marketplace
+loads Ghost from the `dist` branch, so updates arrive on a Spotify restart.
+
+### Install script
+
+Windows (PowerShell):
+
 ```powershell
 iwr -useb https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/install.ps1 | iex
 ```
 
-This places a tiny loader (plus `color.ini`) in `Spicetify\Themes\Ghost`, sets Ghost
+macOS / Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/install.sh | sh
+```
+
+This places a tiny loader (plus `color.ini`) in Spicetify's `Themes/Ghost`, sets Ghost
 as the current theme and runs `spicetify apply`. On each Spotify start the loader asks
 the GitHub API for the latest `dist` commit and loads `theme.js` / `user.css` from
 jsDelivr pinned to that commit: unchanged → straight from cache, new → downloaded. So
 every push to `main` reaches you on the next Spotify start (once the build has run),
 and offline starts use the last cached version.
 
-Pick a colour scheme (`dark`, `oled`) with `.\install.ps1 -Scheme oled`, or:
+Pick a colour scheme (`dark`, `oled`) with `.\install.ps1 -Scheme oled` /
+`sh -s -- --scheme oled`, or:
 
-```powershell
-spicetify config color_scheme oled; spicetify apply
+```sh
+spicetify config color_scheme oled
+spicetify apply
 ```
 
 Go back to your previous theme: `spicetify config current_theme marketplace; spicetify apply`.
+
+### By hand
+
+The [`dist` branch](https://github.com/RazerGhost/spicetify-ghost/tree/dist) is the
+complete built theme. Download it as a
+[ZIP](https://github.com/RazerGhost/spicetify-ghost/archive/refs/heads/dist.zip),
+extract it into Spicetify's `Themes` folder (`spicetify path userdata`), rename the
+folder to `Ghost`, then:
+
+```sh
+spicetify config inject_css 1 replace_colors 1 overwrite_assets 1 inject_theme_js 1
+spicetify config current_theme Ghost color_scheme dark
+spicetify apply
+```
+
+A hand install doesn't update itself.
 
 ## Develop
 
 ```powershell
 npm install
-.\install.ps1 -Local   # links Spicetify\Themes\Ghost -> .\dist and applies
+.\install.ps1 -Local   # links Spicetify\Themes\Ghost -> .\dist and applies (./install.sh --local elsewhere)
 npm run dev            # esbuild watch — rebuilds dist\ on save
 spicetify watch -s     # optional, separate terminal: reloads Spotify on change
 ```
@@ -103,3 +137,14 @@ re-run of the installer (or `spicetify apply`); everything else updates remotely
 
 Push to `main`. The GitHub Action type-checks, builds and publishes `dist/` to the
 `dist` branch; remote installs pick up the new `dist` commit on their next start.
+
+## Publishing
+
+`manifest.json` is what the Marketplace reads (from `main`). It points at the `dist`
+branch for `user.css`, `color.ini` and `theme.js`, which CI rebuilds on every push.
+The Marketplace finds the repo by its `spicetify-themes` GitHub topic and shows
+`docs/preview.png` on the card.
+
+## License
+
+[MIT](LICENSE)
