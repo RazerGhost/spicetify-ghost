@@ -1,4 +1,5 @@
-// Remote loader: installed into Spicetify\Themes\Ghost by `install.ps1`.
+// Remote loader: installed into Spicetify\Themes\Ghost by `install.ps1` /
+// `install.sh`, and loaded by the Marketplace through manifest.json's "include".
 //
 // Loads theme.js / user.css from jsDelivr *pinned to the latest dist commit*:
 //   - branch URLs (@dist) are unreliable right after a push — jsDelivr caches the

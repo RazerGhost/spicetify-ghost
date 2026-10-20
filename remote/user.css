@@ -1,4 +1,5 @@
-/* Intentionally empty: Spicetify requires a user.css, but in the remote install
-   the stylesheet is loaded by theme.js, pinned to the latest dist commit (see
-   remote/theme.js), so updates arrive on the next start instead of being held
-   back by jsDelivr's and the browser's caches. */
+/* Intentionally empty: Spicetify and the Marketplace both require a user.css,
+   but in the remote install (install script or Marketplace) the stylesheet is
+   loaded by theme.js, pinned to the latest dist commit (see remote/theme.js), so
+   updates arrive on the next start instead of being held back by jsDelivr's and
+   the browser's caches. */

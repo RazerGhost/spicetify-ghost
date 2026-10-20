@@ -62,7 +62,7 @@ Spotify changes its markup with updates, and other themes' selectors go stale. S
 | `src/dev.ts` | The `ghost.*` console helpers (dev builds only). |
 | `build.mjs` | esbuild (maps `react` to `Spicetify.React`) + CSS assembly; copies `color.ini`, `LICENSE` and `docs/dist-README.md` into `dist/`. |
 | `scripts/check-selectors.mjs` | `npm run check`. |
-| `remote/` | Loader stubs used by the script install. |
+| `remote/` | The loader (and empty `user.css`) used by the script install and the Marketplace. |
 | `manifest.json` | What the Spicetify Marketplace reads. |
 | `docs/screenshots/` | README screenshots; `01-home.jpg` is also the Marketplace preview. |
 
@@ -70,23 +70,28 @@ Spotify changes its markup with updates, and other themes' selectors go stale. S
 
 Push to `main`. The GitHub Action type-checks, tests, builds and publishes `dist/` to
 the `dist` branch (force-pushed, one run at a time), then purges jsDelivr's cache for
-`@dist`. Every way of installing Ghost loads from `dist`, so nothing on `main` reaches
-users until that build has run.
+`@dist` and the loader. Every way of installing Ghost loads from `dist`, so nothing on
+`main` reaches users until that build has run.
 
 ### How each install picks up a release
 
+Both the Marketplace and the install scripts run the same loader (`remote/theme.js`).
+On each Spotify start it asks the GitHub API for the latest `dist` commit and loads
+`theme.js` / `user.css` from jsDelivr pinned to that commit: unchanged → straight from
+cache, new → downloaded. Offline or rate-limited starts use the last known commit.
+Pinning matters: `@dist` URLs can get stuck on an old copy for up to 12 h — a jsDelivr
+edge that re-fetches right after a purge, while jsDelivr still maps `dist` to the
+previous commit, caches the old file again.
+
 **Marketplace.** The Marketplace finds the repo by its `spicetify-themes` topic and
-reads `manifest.json` from the default branch (`main`). Its `"branch": "dist"` makes
-the relative paths (`user.css`, `color.ini`) resolve against `dist`; `preview`,
-`readme` and `include` are absolute URLs. On each Spotify start the Marketplace loads
-`user.css` and `theme.js` from jsDelivr `@dist`, so updates usually arrive on the next
-restart — or within jsDelivr's ~12 h cache when a purge was throttled.
+reads `manifest.json` from the default branch (`main`); its relative paths resolve
+against `main` too. `include` is the loader and `usercss` the empty `remote/user.css`
+(the Marketplace requires one); the Marketplace serves both through jsDelivr `@main`,
+which only matters when the loader itself changes. It stores the manifest at install
+time, so manifest changes reach people when they reinstall.
 
 **Install script.** `install.ps1` / `install.sh` put the stubs from `remote/` (plus
-`color.ini`) in `Themes/Ghost`. On each Spotify start the loader asks the GitHub API
-for the latest `dist` commit and loads `theme.js` / `user.css` from jsDelivr pinned to
-that commit: unchanged → straight from cache, new → downloaded. Offline or
-rate-limited starts use the last known commit.
+`color.ini`) in `Themes/Ghost`.
 
 **By hand.** A copy of `dist`; never updates.
 
