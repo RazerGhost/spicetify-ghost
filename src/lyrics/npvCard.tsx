@@ -1,7 +1,8 @@
 // Compact lyrics card in the now-playing view (right sidebar), placed right after
-// the cover/canvas block (.main-nowPlayingView-nowPlayingWidget inside
+// the cover/canvas and track title (.main-nowPlayingView-nowPlayingWidget inside
 // .main-nowPlayingView-panel, a.k.a. data-testid="NPV_Panel_OpenDiv"; on Spotify
-// 1.3.3 the widget is only a hashed class, the panel's first child).
+// 1.3.3 the widget is only a hashed class, the panel's first child). Spotify 1.3.5
+// has neither: see findWidget.
 // Hidden when the song has no lyrics, and while the full lyrics page is open.
 // Click the header to open the full page.
 
@@ -37,11 +38,29 @@ export function initLyricsCard() {
   host.className = "ghost-lyrics-card-host";
   let unmount: (() => void) | null = null;
 
-  const place = () => {
-    const s = getSettings();
-    const widget = document.querySelector(
+  /** The block the card goes after. Spotify 1.3.5 dropped every readable class and
+   *  test id in the panel (aside#Desktop_PanelContainer_Id); there the cover and the
+   *  title row are separate, followed by groups of sections (credits, queue, …).
+   *  So: walk up from the first section to the group whose previous sibling is the
+   *  title row — it holds buttons (copy link, add to playlist) but, unlike the
+   *  blocks below it (about the artist, merch), no h2 heading. */
+  const findWidget = () => {
+    const old = document.querySelector(
       ".main-nowPlayingView-panel > .main-nowPlayingView-nowPlayingWidget, [data-testid='NPV_Panel_OpenDiv'] > :first-child",
     );
+    if (old) return old;
+    const section = document.querySelector("#Desktop_PanelContainer_Id section:not(.ghost-lyrics-card)");
+    for (let n = section; n?.parentElement; n = n.parentElement) {
+      let prev = n.previousElementSibling;
+      if (prev === host) prev = prev.previousElementSibling;
+      if (prev?.querySelector("button") && !prev.querySelector("h2")) return prev;
+    }
+    return null;
+  };
+
+  const place = () => {
+    const s = getSettings();
+    const widget = findWidget();
     if (!s.lyricsPage || !s.lyricsCard || !widget || onLyricsRoute()) {
       unmount?.();
       unmount = null;
