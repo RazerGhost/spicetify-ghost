@@ -11,6 +11,12 @@
   box-shadow: inset 0 0 0 1px var(--ghost-border);
 }
 
+/* On 1.3.5 the card sits over the lower part of the canvas, whose overlays are
+   absolutely positioned and would paint over an in-flow (static) card. */
+.ghost-lyrics-card-host {
+  position: relative;
+}
+
 /* Spotify's own "Lyrics preview" card is a later sibling in the same panel
    (dwp-panel-section.js). Hide it while ours shows lyrics; when ours renders
    nothing (no synced lyrics) the host is empty and Spotify's stays. */

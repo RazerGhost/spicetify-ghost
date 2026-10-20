@@ -13,10 +13,22 @@ html.ghost :is(.main-nowPlayingView-canvasVisualEnhancement, [data-testid="track
   background: none !important;
 }
 
+/* Spotify 1.3.5: no test ids or readable classes left in the panel, and the
+   overlays are three divs in the box right after the <video>'s own box: the top
+   fade, the bottom band, and a full-height tint that also ends in solid dark.
+   Matched only with exactly those three children, so other layouts are left alone. */
+html.ghost #Desktop_PanelContainer_Id :has(> video) + div:has(> :nth-child(3):last-child) > :nth-child(1) {
+  background: linear-gradient(rgba(0, 0, 0, 0.45), transparent 30%) !important;
+}
+
+html.ghost #Desktop_PanelContainer_Id :has(> video) + div:has(> :nth-child(3):last-child) > :nth-child(n + 2) {
+  background: none !important;
+}
+
 /* With the dark band gone, a canvas (looping video) ends in a hard edge across
    the panel. Fade the <video> itself out into the glass. Masking a container
    instead hid the video entirely — it's positioned outside its container's box. */
-html.ghost .NowPlayingView video {
+html.ghost :is(.NowPlayingView, #Desktop_PanelContainer_Id) video {
   mask-image: linear-gradient(#000 55%, transparent 100%);
 }
 
