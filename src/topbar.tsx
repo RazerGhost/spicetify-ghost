@@ -19,8 +19,7 @@ const CUSTOM_LINKS = ".custom-navlinks-scrollable_container";
 
 export function addTopbarButton(label: string, onClick: () => void) {
   const element = document.createElement("div");
-  element.className = "ghost-topbar-button";
-  element.style.display = "contents";
+  element.className = "ghost-topbar-button"; // flex + no-drag: 40-top-bar.css
 
   const ButtonTertiary = Spicetify.ReactComponent?.ButtonTertiary;
   if (ButtonTertiary) {

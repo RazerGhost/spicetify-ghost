@@ -208,18 +208,14 @@ html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
 
 /* --- Top bar button ----------------------------------------------------- */
 
-/* Spicetify's wrapper is a plain block <div>; the inline-flex ButtonTertiary
-   inside sits on the text baseline and drops a few px. Centre it like the cart. */
+/* topbar.tsx's wrapper is a plain block <div>; the inline-flex ButtonTertiary
+   inside sits on the text baseline and drops a few px. Centre it like the cart.
+   The top 60px are a window-drag region (.body-drag-top) with only Spotify's own
+   controls marked no-drag; without this, clicks on the button move the window. */
 .ghost-topbar-button {
   display: flex;
   align-items: center;
-}
-
-/* topbar.tsx keeps Spicetify's own <button> but hides it with [hidden];
-   Spicetify's `.spicetify-topbar-button > button { display: flex; width: 32px }`
-   overrides the browser's [hidden] rule, leaving an invisible 32px gap. */
-.ghost-topbar-button > button[hidden] {
-  display: none !important;
+  -webkit-app-region: no-drag;
 }
 
 @media (prefers-reduced-motion: reduce) {
