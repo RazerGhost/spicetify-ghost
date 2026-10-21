@@ -43,6 +43,17 @@ function zoomFactor(): number {
 // Only a hit is cached: early on the API may not be registered yet.
 type NativeApi = Required<NonNullable<GhostPlatform["NativeAPI"]>>;
 let nativeApi: NativeApi | null = null;
+/** Spotify's own setWindowButtonsVisibility, before guardNativeApi wraps it. */
+let setVisibility: ((show: boolean) => Promise<void>) | null = null;
+
+/** Spotify shows the buttons itself at times (opening and closing the expanded
+ *  now-playing view, leaving fullscreen), which would undo "Hide window
+ *  buttons". Wrap its setter so that, while Ghost hides them, "show" stays hidden. */
+function guardNativeApi(api: NativeApi) {
+  if (setVisibility) return;
+  setVisibility = api.setWindowButtonsVisibility.bind(api);
+  api.setWindowButtonsVisibility = (show: boolean) => setVisibility!(show && !shouldHide());
+}
 
 function findNativeApi(): NativeApi | null {
   if (nativeApi) return nativeApi;
@@ -58,6 +69,7 @@ function findNativeApi(): NativeApi | null {
       // some Platform getters throw; skip them
     }
   }
+  if (found) guardNativeApi(found);
   return (nativeApi = found);
 }
 
@@ -65,9 +77,11 @@ function findNativeApi(): NativeApi | null {
  *  the native buttons are drawn over the page and would take clicks from it. */
 let forcedHidden = false;
 
+const shouldHide = () => forcedHidden || getSettings().hideWindowButtons;
+
 function applyButtonVisibility() {
-  const hidden = forcedHidden || getSettings().hideWindowButtons;
-  findNativeApi()?.setWindowButtonsVisibility(!hidden).catch(() => {});
+  if (!findNativeApi()) return;
+  setVisibility?.(!shouldHide()).catch(() => {});
 }
 
 /** Hide the native window buttons while `hidden`, then go back to the setting. */
