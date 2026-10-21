@@ -47,6 +47,48 @@ html.ghost .Root__top-container > :has(> .over-cinema-scroll) [style*="--section
   --section-background-base: rgba(var(--spice-rgb-text), 0.05) !important;
 }
 
+/* Below the hero, Spotify paints a layer (a fade into --background-base) behind
+   the related videos and cards that covers the hero artwork as the view
+   scrolls. Transparent, the artwork showed through; frost it instead, with the
+   same soft top edge. It's the first child of the cards' wrapper. */
+html.ghost .Root__top-container > :has(> .over-cinema-scroll) [style*="--section-background-base: var(--background-elevated-base)"] > :first-child {
+  backdrop-filter: blur(40px) saturate(1.2);
+  mask-image: linear-gradient(transparent, #000 96px);
+}
+
+/* "Related music videos" is a full-bleed carousel ([style*=--carousel-shelf-
+   element-width]) with grey arrow circles at the panel's edges; the cards below
+   sit in a centred column. Give the carousel the cards' column (same widths and
+   container query as Spotify's card grid) and Ghost glass arrows. */
+html.ghost .Root__top-container > :has(> .over-cinema-scroll) [style*="--carousel-shelf-element-width"] {
+  /* Spotify offsets the heading and first item by this gap to line them up
+     with the column in the full-bleed layout; inside the column, no offset. */
+  --full-bleed-gap: 0px !important;
+  max-width: calc(656px - 96px);
+  margin-inline: auto !important;
+}
+
+@container below-fold-cards (width >= 784px) {
+  html.ghost .Root__top-container > :has(> .over-cinema-scroll) [style*="--carousel-shelf-element-width"] {
+    max-width: calc(1248px - 96px);
+  }
+}
+
+html.ghost .Root__top-container > :has(> .over-cinema-scroll) [style*="--carousel-shelf-element-width"] > * > * > [aria-hidden]:has(> svg) {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgb(from var(--spice-main) r g b / 0.55) !important;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 0 0 1px var(--ghost-border),
+    0 4px 12px rgb(0 0 0 / 0.3);
+}
+
+html.ghost .Root__top-container > :has(> .over-cinema-scroll) [style*="--carousel-shelf-element-width"] > * > * > [aria-hidden]:has(> svg):hover {
+  background-color: rgb(from var(--spice-main) r g b / 0.75) !important;
+}
+
 /* The scroll area: same outline, and its own copy of --background-base. */
 html.ghost .Root__top-container > :has(> .over-cinema-scroll) > :has(> .os-scrollbar) {
   outline: none !important;
