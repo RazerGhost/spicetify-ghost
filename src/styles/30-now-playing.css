@@ -13,15 +13,17 @@ html.ghost :is(.main-nowPlayingView-canvasVisualEnhancement, [data-testid="track
   background: none !important;
 }
 
-/* Spotify 1.3.5: no test ids or readable classes left in the panel, and the
-   overlays are three divs in the box right after the <video>'s own box: the top
-   fade, the bottom band, and a full-height tint that also ends in solid dark.
-   Matched only with exactly those three children, so other layouts are left alone. */
-html.ghost #Desktop_PanelContainer_Id :has(> video) + div:has(> :nth-child(3):last-child) > :nth-child(1) {
+/* Spotify 1.3.5: no test ids or readable classes left in the panel (the build
+   inlines hashed class strings; Spicetify's css-map doesn't cover them). The
+   overlay is the CanvasOverlay component: an [aria-hidden] box right after the
+   <video>'s own box, with three divs — the top fade, the bottom band, and a
+   full-height tint that also ends in solid dark. Matched only with exactly those
+   three children, so other layouts are left alone. */
+html.ghost #Desktop_PanelContainer_Id :has(> video) + [aria-hidden]:has(> :nth-child(3):last-child) > :nth-child(1) {
   background: linear-gradient(rgba(0, 0, 0, 0.45), transparent 30%) !important;
 }
 
-html.ghost #Desktop_PanelContainer_Id :has(> video) + div:has(> :nth-child(3):last-child) > :nth-child(n + 2) {
+html.ghost #Desktop_PanelContainer_Id :has(> video) + [aria-hidden]:has(> :nth-child(3):last-child) > :nth-child(n + 2) {
   background: none !important;
 }
 

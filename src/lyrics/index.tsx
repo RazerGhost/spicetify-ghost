@@ -11,6 +11,7 @@ import { onDomChange } from "../watch";
 import { initPlayerButtons } from "./buttons";
 import { LyricsPage } from "./LyricsPage";
 import { initLyricsCard } from "./npvCard";
+import { initExpandedLyrics } from "./npvExpanded";
 import { onLyricsRoute } from "./route";
 
 function initLyricsPage() {
@@ -48,5 +49,6 @@ function initLyricsPage() {
 export function initLyrics() {
   initLyricsPage();
   initLyricsCard();
+  initExpandedLyrics();
   initPlayerButtons();
 }
