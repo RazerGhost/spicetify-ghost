@@ -17,10 +17,12 @@
   position: relative;
 }
 
-/* Spotify's own "Lyrics preview" card is a later sibling in the same panel
-   (dwp-panel-section.js). Hide it while ours shows lyrics; when ours renders
+/* Spotify's own "Lyrics preview" card comes later in the same panel
+   (dwp-panel-section.js): a sibling of ours, or on 1.3.5 inside the group of
+   sections that follows it. Hide it while ours shows lyrics; when ours renders
    nothing (no synced lyrics) the host is empty and Spotify's stays. */
-.ghost-lyrics-card-host:has(> .ghost-lyrics-card) ~ [data-testid="lyrics-npv-section"] {
+.ghost-lyrics-card-host:has(> .ghost-lyrics-card) ~ [data-testid="lyrics-npv-section"],
+.ghost-lyrics-card-host:has(> .ghost-lyrics-card) ~ * [data-testid="lyrics-npv-section"] {
   display: none;
 }
 
