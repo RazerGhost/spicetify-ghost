@@ -63,6 +63,14 @@ html.ghost:not([data-right-sidebar-open-duringenter], [data-right-sidebar-open-p
   visibility: hidden;
 }
 
+/* The view's own full-screen button puts <body> in fullscreen and pulls the
+   view up over the top bar, which then shows through the glass and overlaps
+   the view's header. Hide the bar meanwhile. (Ghost's fullscreen lyrics use
+   <html>, so this doesn't touch them.) */
+html.ghost body:fullscreen .Root__top-container:has(> * > .over-cinema-scroll) > .Root__globalNav {
+  visibility: hidden;
+}
+
 /* --- Ghost lyrics in the lyrics view (src/lyrics/npvExpanded.tsx) ----------
    While Spotify's lyrics view is selected, Ghost's lyrics page fills the view
    below the header and Spotify's scroll area (its lyrics and the cards) hides. */
