@@ -220,7 +220,7 @@ html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
   -webkit-app-region: no-drag;
 }
 
-/* --- Linux window buttons and drag area (linuxWindow.tsx) ---------------- */
+/* --- Linux window buttons (linuxWindow.tsx) ------------------------------ */
 
 /* Close / minimise at the right end of the bar; same round buttons as the rest
    of the bar (.main-globalNav-link-icon). */
@@ -230,13 +230,6 @@ html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
   gap: 8px;
   margin-inline-start: 8px;
   -webkit-app-region: no-drag;
-}
-
-/* Without a title bar (Hyprland draws none) the top bar is where you grab the
-   window: make it a drag area. Spotify marks its own controls no-drag (arrows,
-   custom-app links, search, the right-hand buttons); Ghost's buttons are too. */
-html.ghost.spotify__os--is-linux .Root__globalNav {
-  -webkit-app-region: drag;
 }
 
 /* The empty spacer Spotify keeps left of the arrows for Windows' native ⋯ menu

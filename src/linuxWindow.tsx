@@ -8,7 +8,9 @@
 // closeWindow follows Spotify's own close setting; setWindowState({ state: 3 })
 // asks the window manager to minimise. Hyprland ignores an app's own minimise
 // request (only taskbar-style clients can minimise there), so the default is
-// close only. Moving: the top bar is a drag area on Linux (40-top-bar.css).
+// close only. Moving can't be done from here: Spotify on Linux leaves that to the
+// window manager's title bar (it ignores -webkit-app-region), so on Hyprland the
+// window moves with its mouse bind (e.g. Super + drag).
 
 import { Icon } from "./icons";
 import { isLinux, platform } from "./platform";
