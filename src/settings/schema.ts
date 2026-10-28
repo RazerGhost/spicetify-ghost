@@ -2,6 +2,7 @@
 // valid values (slider range, choice options). Settings/Panel.tsx renders it;
 // store.ts uses it to validate saved settings.
 
+import { isLinux } from "../platform";
 import type { Settings } from "./store";
 
 type KeysOf<T> = { [K in keyof Settings]: Settings[K] extends T ? K : never }[keyof Settings];
@@ -131,6 +132,18 @@ export const SECTIONS: { title: string; controls: ControlDef[] }[] = [
       { kind: "toggle", key: "slimRail", label: "Slim collapsed library", hint: "Narrower library rail when the library is collapsed." },
       { kind: "toggle", key: "libraryAutoHide", label: "Auto-hide library", hint: "Slides away; hover the left edge to bring it back." },
       { kind: "toggle", key: "hideWindowButtons", label: "Hide window buttons (Windows)", hint: "Removes minimise / maximise / close from the top bar, which then runs the full width. Use Win+↓, Win+↑ and Alt+F4 instead." },
+      {
+        kind: "choice",
+        key: "linuxWindowButtons",
+        label: "Window buttons (Linux)",
+        hint: "For window managers that draw no title bar, like Hyprland. Minimise only works where the desktop supports it (GNOME, KDE); Hyprland ignores it.",
+        options: [
+          { value: "close", label: "Close" },
+          { value: "both", label: "Minimise + close" },
+          { value: "off", label: "Off" },
+        ],
+        when: () => isLinux,
+      },
     ],
   },
   {

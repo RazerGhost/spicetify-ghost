@@ -11,6 +11,7 @@ export type AccentSource = "art" | "custom" | "theme";
 export type BannerMode = "fade" | "hide";
 export type PlayerStyle = "floating" | "plain";
 export type FullscreenMode = "auto" | "screen" | "window";
+export type LinuxWindowButtons = "close" | "both" | "off";
 
 export type Settings = {
   // Background
@@ -53,6 +54,7 @@ export type Settings = {
   slimRail: boolean;
   libraryAutoHide: boolean;
   hideWindowButtons: boolean;
+  linuxWindowButtons: LinuxWindowButtons;
   // Layout
   panelOpacity: number; // %
   borderOpacity: number; // %
@@ -98,6 +100,7 @@ export const DEFAULTS: Settings = {
   slimRail: true,
   libraryAutoHide: false,
   hideWindowButtons: true,
+  linuxWindowButtons: "close",
   panelOpacity: 35,
   borderOpacity: 6,
   radius: 12,

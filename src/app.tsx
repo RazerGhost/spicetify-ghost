@@ -4,6 +4,7 @@ import { applySettings } from "./settings/store";
 import { SettingsPanel } from "./settings/Panel";
 import { addTopbarButton } from "./topbar";
 import { initWindowControls } from "./windowControls";
+import { initLinuxWindowButtons } from "./linuxWindow";
 import { initVolume } from "./volume";
 import { initLyrics } from "./lyrics";
 import { initSidebarState } from "./sidebar";
@@ -15,6 +16,7 @@ export function start() {
   initBackground();
   initAccent();
   initWindowControls();
+  initLinuxWindowButtons();
   initVolume();
   initLyrics();
   initSidebarState();
