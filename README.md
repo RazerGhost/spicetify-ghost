@@ -65,6 +65,10 @@ curl -fsSL https://raw.githubusercontent.com/RazerGhost/spicetify-ghost/main/ins
 This sets Ghost as your theme and restarts Spotify. It also updates itself: new
 versions load the next time you start Spotify, and it keeps working offline.
 
+On Linux, Spicetify has to be able to write to Spotify's folder (e.g. `/opt/spotify`
+for the AUR package): `sudo chown -R "$USER" /opt/spotify`. Run
+`spicetify backup apply` after a Spotify update.
+
 ### By hand
 
 Download the [built theme as a ZIP](https://github.com/RazerGhost/spicetify-ghost/archive/refs/heads/dist.zip),
@@ -92,6 +96,12 @@ the album art unless you change it in Ghost's settings.
   spicetify config color_scheme oled
   spicetify apply
   ```
+
+**Your own scheme:** add a section to `color.ini` in Spicetify's `Themes/Ghost`
+folder (same keys as `dark`) and select it as above. Tools that generate colours
+from your wallpaper, like matugen or pywal, can write it for you. Set Ghost's
+**Colours → Accent** to **Theme** to use the scheme's accent instead of the album
+art's. (The install script replaces `color.ini` when you re-run it.)
 
 ## Settings
 

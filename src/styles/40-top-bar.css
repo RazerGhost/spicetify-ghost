@@ -22,8 +22,10 @@ html.ghost.ghost-nav-autohide .Root__globalNav {
 /* Windows' native min/max/close buttons sit over the top-right corner. Spotify
    reserves 135px for them with .main-globalNav-contentRightSpacer (and pulls the
    right-hand content under them with a negative margin). In glass mode the pill
-   stops before them instead; windowControls.ts matches their height to the bar. */
-html.ghost.ghost-nav-glass .Root__globalNav {
+   stops before them instead; windowControls.ts matches their height to the bar.
+   Linux has no such buttons in the window (the window manager decorates it, or
+   on Hyprland nothing does), so there the pill runs to the edge. */
+html.ghost.ghost-nav-glass:not(.spotify__os--is-linux) .Root__globalNav {
   margin-inline-end: calc(135px / (var(--zoom-level, 100) / 100)) !important;
 }
 
@@ -92,12 +94,12 @@ html.ghost .Root__globalNav
    Spotify only reserves room for it with .main-globalNav-historyButtonsSpacer,
    which the native button is drawn over. Paint the same round glass circle on
    that spacer so it sits behind the native dots. (No hover: the native button
-   gets the mouse, not the page.) */
-html.ghost :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child) {
+   gets the mouse, not the page.) Linux has no native menu there, so no circle. */
+html.ghost:not(.spotify__os--is-linux) :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child) {
   position: relative;
 }
 
-html.ghost :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child)::before {
+html.ghost:not(.spotify__os--is-linux) :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child)::before {
   content: "";
   position: absolute;
   top: 50%;
