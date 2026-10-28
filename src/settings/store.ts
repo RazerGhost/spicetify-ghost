@@ -245,6 +245,7 @@ export function applySettings() {
 
   root.classList.toggle("ghost-tinted", baseCaptured && s.tint > 0);
   root.classList.toggle("ghost-banner-hide", s.bannerMode === "hide");
+  root.classList.toggle("ghost-lyrics-replace", s.lyricsPage);
   root.classList.toggle("ghost-player-floating", s.playerStyle === "floating");
   root.classList.toggle("ghost-nav-glass", s.navGlass);
   root.classList.toggle("ghost-nav-autohide", s.navAutoHide);

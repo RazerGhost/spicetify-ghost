@@ -324,3 +324,16 @@ html.ghost-lyrics-open [data-testid="lyrics-button"] {
     transform: none;
   }
 }
+
+/* Spotify disables its lyrics button for songs it has no lyrics for; Ghost may
+   still have them (buttons.ts opens its page on press). Look like the other
+   player-bar buttons instead of a faded, not-allowed one. */
+html.ghost-lyrics-replace [data-testid="lyrics-button"]:disabled {
+  opacity: 1;
+  cursor: pointer;
+  color: var(--text-subdued);
+}
+
+html.ghost-lyrics-replace [data-testid="lyrics-button"]:disabled:hover {
+  color: var(--text-base);
+}
