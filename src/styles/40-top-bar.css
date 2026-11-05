@@ -94,7 +94,9 @@ html.ghost .Root__globalNav
    Spotify only reserves room for it with .main-globalNav-historyButtonsSpacer,
    which the native button is drawn over. Paint the same round glass circle on
    that spacer so it sits behind the native dots. (No hover: the native button
-   gets the mouse, not the page.) Linux has no native menu there, so no circle. */
+   gets the mouse, not the page.) On Linux Spotify draws the ⋯ itself, positioned
+   over this spacer, so the spacer stays (without it the arrows slide under the
+   ⋯) but gets no circle. */
 html.ghost:not(.spotify__os--is-linux) :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child) {
   position: relative;
 }
@@ -230,12 +232,6 @@ html.ghost-nav-autohide .Root__globalNav:is(:hover, :focus-within) {
   gap: 8px;
   margin-inline-start: 8px;
   -webkit-app-region: no-drag;
-}
-
-/* The empty spacer Spotify keeps left of the arrows for Windows' native ⋯ menu
-   holds nothing on Linux; drop it, as "Hide window buttons" does on Windows. */
-html.ghost.spotify__os--is-linux :is(.main-globalNav-historyButtonsSpacer, .main-globalNav-historyButtonsWrapper > div:empty:first-child) {
-  display: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
