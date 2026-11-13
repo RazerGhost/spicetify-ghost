@@ -87,6 +87,14 @@ html.ghost :is(.main-entityHeader-container, [data-testid="entity-header"]) > [s
   display: none;
 }
 
+/* Header dividers ("Artist • 2020 • 14 songs"): Spotify 1.3.9 writes the "•"
+   into the span, and Spicetify's class map also gives that span a class whose
+   ::before draws one — two dots. Drop the ::before where the span has its own
+   (earlier versions leave it empty and keep theirs). */
+html.ghost .main-entityHeader-divider:not(:empty)::before {
+  content: none;
+}
+
 /* Gradient behind the play/follow action bar. On 1.3.3 an empty div (hashed
    class) coloured through an inline --background-base-70, or -20 for the
    "seamless" variant under picture headers (xpui chunk 59763). Where it sits

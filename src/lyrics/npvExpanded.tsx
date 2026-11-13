@@ -10,6 +10,9 @@
 // shows Ghost's lyrics when the view opens right after it, until another mode is
 // picked or the view closes. (On older versions the button goes to Ghost's
 // lyrics page instead and the view doesn't open, so nothing changes there.)
+//
+// 1.3.9 dropped the lyrics radio: the switch has three, and in lyrics mode none
+// is checked while the player bar's lyrics button is pressed.
 
 import { mount } from "../react";
 import { getSettings, watchSettings } from "../settings/store";
@@ -18,6 +21,7 @@ import { LyricsPage } from "./LyricsPage";
 
 const VIEW = ".Root__top-container > :has(> .over-cinema-scroll)";
 const RADIOS = '[role="radiogroup"] > [role="radio"]';
+const LYRICS_BUTTON = '[data-testid="lyrics-button"]';
 /** How long after a lyrics-button press the view may still open and count. */
 const PRESS_WINDOW_MS = 3000;
 
@@ -32,7 +36,13 @@ export function initExpandedLyrics() {
   const sync = () => {
     const current = document.querySelector(VIEW);
     const radios = current?.querySelectorAll(RADIOS);
-    const lyricsOn = radios?.length === 4 && radios[3].getAttribute("aria-checked") === "true";
+    const lyricsOn =
+      (radios?.length === 4 && radios[3].getAttribute("aria-checked") === "true") ||
+      // 1.3.9: no lyrics radio; lyrics mode is "none checked" while the player
+      // bar's lyrics button is pressed. (Earlier, one radio is always checked.)
+      (!!radios?.length &&
+        ![...radios].some((r) => r.getAttribute("aria-checked") === "true") &&
+        document.querySelector(LYRICS_BUTTON)?.getAttribute("aria-pressed") === "true");
 
     if (pressedAt && Date.now() - pressedAt >= PRESS_WINDOW_MS) pressedAt = 0;
     if (current && pressedAt) {
@@ -61,7 +71,7 @@ export function initExpandedLyrics() {
     "click",
     (e) => {
       const target = e.target as Element | null;
-      if (target?.closest?.('[data-testid="lyrics-button"]')) {
+      if (target?.closest?.(LYRICS_BUTTON)) {
         // Pressed while our lyrics show: Spotify closes the view; let it.
         pressedAt = view && wanted ? 0 : Date.now();
         wanted = false;
