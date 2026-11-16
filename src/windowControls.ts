@@ -13,7 +13,7 @@
 // Spotify re-sends its own 64-based value whenever zoom changes — we have to
 // re-apply ours after it (same reason Lucid re-sends for a few seconds).
 
-import { isWindows, platform, type GhostPlatform } from "./platform";
+import { isWindows, platform, spotifyAtLeast, type GhostPlatform } from "./platform";
 import { getSettings, watchSettings } from "./settings/store";
 
 async function setTitlebarHeight(height: number) {
@@ -87,11 +87,23 @@ function applyButtonVisibility() {
 /** Hide the native window buttons while `hidden`, then go back to the setting. */
 export function forceHideWindowButtons(hidden: boolean) {
   forcedHidden = hidden;
-  applyButtonVisibility();
+  apply();
 }
+
+/** Title-bar height while the buttons are hidden. Since Spotify 1.3.9 hidden
+ *  buttons are only invisible: they still take clicks (the bell, friends and
+ *  avatar under them did nothing; the bell's spot minimised the window). Their
+ *  click area is as tall as the title bar, so shrink it to a sliver. Only from
+ *  1.3.9 on: earlier versions' hidden buttons take no clicks and keep the
+ *  normal height. */
+const HIDDEN_TITLEBAR_HEIGHT = 1;
 
 function apply() {
   applyButtonVisibility();
+  if (shouldHide() && spotifyAtLeast("1.3.9")) {
+    setTitlebarHeight(HIDDEN_TITLEBAR_HEIGHT);
+    return;
+  }
   const s = getSettings();
   // Global-nav row in CSS px: Ghost's 52px glass bar (or Spotify's 48px) plus
   // the panel gap above and below it — the same 64px Spotify uses by default.

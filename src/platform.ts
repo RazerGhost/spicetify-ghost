@@ -42,4 +42,19 @@ export const isWindows = navigator.userAgent.includes("Windows");
 export const isLinux = navigator.userAgent.includes("Linux") && !navigator.userAgent.includes("Android");
 
 export const platform = (): GhostPlatform => Spicetify.Platform;
+
+/** True when Spotify is at least `min` (e.g. "1.3.9"); compares numerically
+ *  part by part ("1.3.9.2055"). False when the version is unknown. */
+export function spotifyAtLeast(min: string): boolean {
+  const version: unknown = (Spicetify.Platform as { version?: unknown } | undefined)?.version;
+  if (typeof version !== "string") return false;
+  const have = version.split(".").map(Number);
+  const want = min.split(".").map(Number);
+  for (let i = 0; i < want.length; i++) {
+    const h = have[i] ?? 0;
+    if (!Number.isFinite(h)) return false;
+    if (h !== want[i]) return h > want[i];
+  }
+  return true;
+}
 export const history = (): SpotifyHistory => platform().History;
