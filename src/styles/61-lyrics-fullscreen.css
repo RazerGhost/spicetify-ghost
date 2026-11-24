@@ -39,10 +39,14 @@ html.ghost-fullscreen .Root {
   cursor: none;
 }
 
+/* In window mode the ✕ sits inside Spotify's window-drag strip (.body-drag-top,
+   the top 60px), which takes the click to move the window whatever is drawn on
+   top. no-drag hands it back to the button (as for the top bar's ghost button). */
 .ghost-fs__close {
   position: absolute;
   top: 24px;
   right: 24px;
+  -webkit-app-region: no-drag;
 }
 
 .ghost-fs--idle :is(.ghost-fs__close, .ghost-fs__controls, .ghost-progress) {
